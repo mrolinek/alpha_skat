@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+*.gm
+
+\.idea/
+
+Marias_jednohlavy_hraci_karty_klasicke\.jpg
