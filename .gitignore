@@ -133,3 +133,7 @@ dmypy.json
 \.idea/
 
 Marias_jednohlavy_hraci_karty_klasicke\.jpg
+
+snaps/
+
+*.avi

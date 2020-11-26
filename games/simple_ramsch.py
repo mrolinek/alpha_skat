@@ -35,6 +35,7 @@ class Ramsch(object):
         self.hands[2] = list(self.deck[self.dealing_pattern == 2])
         self.skat = self.deck[self.dealing_pattern == 3]
         self.init_hands = [list(item) for item in self.hands] + [list(self.skat)]
+        self.historical_scores = []
         self.active_trick = []
         self.tricks = []
         self.scores = [0, 0, 0]
@@ -120,9 +121,13 @@ class Ramsch(object):
                 self.done = True
                 self.finalize_scores()
 
+            self.historical_scores.append(list(self.scores))
+
     def save(self, filename):
         to_save = dict(init_hands=self.init_hands,
-                       actions=self.taken_actions)
+                       actions=self.taken_actions,
+                       historical_scores=self.historical_scores,
+                       final_scores=self.final_scores)
         with open(filename, 'wb') as f:
             pickle.dump(to_save, f)
 
@@ -166,8 +171,7 @@ for i in range(200):
         action = random.choice(choices)
         game.take_action(action)
 
-    if 120 in game.scores:
-        print("Durchmarsch")
+    if  max(game.scores) > 100:
         print(game.final_scores)
         game.save("durchmarsch.gm")
         exit(0)
