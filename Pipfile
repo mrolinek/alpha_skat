@@ -8,8 +8,10 @@ verify_ssl = true
 [packages]
 numpy = "*"
 matplotlib = "*"
+cluster = {editable = true,git = "git@gitlab.tuebingen.mpg.de/mrolinek/cluster_utils.git",ref = "experimental"}
 pillow = "*"
 pygame = "*"
+tqdm = "*"
 
 [requires]
 python_version = "3.6"

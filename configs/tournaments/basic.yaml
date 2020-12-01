@@ -1,0 +1,14 @@
+game_name: simple_ramsch
+working_dir: "tmp"
+num_games: 100
+save_games: false
+player_params:
+  - name: FullStateMCTSPlayer
+    num_mcts_rollouts: 100
+    exploration_weight: 10.0
+  - name: FullStateMCTSPlayer
+    num_mcts_rollouts: 100
+    exploration_weight: 10.0
+  - name: FullStateMCTSPlayer
+    num_mcts_rollouts: 100
+    exploration_weight: 1.0
