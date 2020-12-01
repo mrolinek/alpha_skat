@@ -1,0 +1,19 @@
+{
+  "optimization_procedure_name": "MCTS_params",
+  "__import__": "grid_searches/base_cpu.json",
+  "fixed_params": {
+    "__import_promise__": "configs/tournaments/basic.yaml"
+  },
+  "restarts": 1,
+  "samples": null,
+  "hyperparam_list": [
+    {
+      "param": "player_params.player_three.num_mcts_rollouts",
+      "values": [50, 100, 200, 400, 800, 1600]
+    },
+    {
+      "param": "player_params.player_three.exploration_weight",
+      "values": [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
+    }
+  ]
+}

@@ -79,7 +79,9 @@ def spawn_player(name, **kwargs):
 
 @cluster_main
 def main(player_params, num_games, game_name, working_dir, save_games):
-    players = [spawn_player(**player) for player in player_params]
+    players = [spawn_player(**player_params.player_one),
+               spawn_player(**player_params.player_two),
+               spawn_player(**player_params.player_three)]
 
     total_scores = np.array([0., 0., 0.])
     last_state = None

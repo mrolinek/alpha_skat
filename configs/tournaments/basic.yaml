@@ -1,14 +1,17 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 100
+num_games: 200
 save_games: false
 player_params:
-  - name: FullStateMCTSPlayer
+  player_one:
+    name: FullStateMCTSPlayer
     num_mcts_rollouts: 100
     exploration_weight: 10.0
-  - name: FullStateMCTSPlayer
+  player_two:
+    name: FullStateMCTSPlayer
     num_mcts_rollouts: 100
     exploration_weight: 10.0
-  - name: FullStateMCTSPlayer
+  player_three:
+    name: FullStateMCTSPlayer
     num_mcts_rollouts: 100
     exploration_weight: 1.0
