@@ -21,9 +21,9 @@ class Card(pygame.sprite.Sprite):
 Rect = namedtuple('Rect', ['top', 'left', 'bottom', 'right'])
 
 class Hand(object):
-    def __init__(self, init_cards, player_num, rect):
+    def __init__(self, player_num, rect):
         self.player_num = player_num
-        self.current_cards = init_cards
+        self.current_cards = []
         self.rotation_angle = 90 - 90 * player_num  # player 0 -> left, 1 -> center, 2 -> right
         self.card_sprites = []
         self.rect = rect
@@ -38,7 +38,7 @@ class Hand(object):
 
 
     def recompute_centers(self):
-        if not self.current_cards:
+        if not len(self.current_cards):
             return []
         edge_offset = 90
         card_center_gap = 70
@@ -60,13 +60,10 @@ class Hand(object):
         else:
             assert 0
 
-    def add(self, card):
-        self.current_cards.append(card)
+    def set_cards(self, new_cards):
+        self.current_cards = new_cards
         self.sync()
 
-    def remove(self, card):
-        self.current_cards.remove(card)
-        self.sync()
 
     def render_update(self, screen):
         for sprite in self.card_sprites:
@@ -80,15 +77,11 @@ class Trick(object):
         self.rect = rect
         self.centers = self.compute_centers()
 
+    def set_cards(self, current_trick, starting_player):
 
-
-
-    def add(self, player, card):
-        self.cards[player] = card
-        self.sync()
-
-    def end(self):
         self.cards = [None, None, None]
+        for i, card in enumerate(current_trick):
+            self.cards[(starting_player + i) % 3] = card
         self.sync()
 
     def sync(self):
@@ -121,9 +114,12 @@ class History(object):
         self.num_tricks = num_tricks
         self.centers = self.compute_centers()
 
-    def add(self, player, trick, card):
-        self.cards[trick][2-player] = card
+    def set_history(self, played_cards, players):
+        self.cards = [[None, None, None] for i in range(self.num_tricks)]
+        for i, (card, player) in enumerate(zip(played_cards, players)):
+            self.cards[i // 3][player] = card
         self.sync()
+
 
     def sync(self):
         for sprite in self.card_sprites:
@@ -144,9 +140,10 @@ class History(object):
 
 
         def centers_for_k(k):
-            return [(x_centers[0], y_centers[k]),
+            return [(x_centers[2], y_centers[k]),
                     (x_centers[1], y_centers[k]+middle_lower),
-                    (x_centers[2], y_centers[k])]
+                    (x_centers[0], y_centers[k])
+                    ]
 
         centers = [centers_for_k(k) for k in range(self.num_tricks)]
         return centers
@@ -157,10 +154,9 @@ class History(object):
 
 
 class StatusBar(object):
-    def __init__(self, rect, skat, names):
+    def __init__(self, rect, names):
         self.rect = rect
-        self.cards = [Card(skat[0], rotation=0, center=(self.rect.left + 140, 60)),
-                      Card(skat[1], rotation=0, center=(self.rect.left + 205, 60))]
+        self.cards = []
         self.scores = [0, 0, 0]
         self.score_texts = []
 
@@ -174,8 +170,11 @@ class StatusBar(object):
         self.sync()
 
 
-    def update_scores(self, new_scores):
-        self.scores = new_scores
+    def set_status(self, current_status):
+        skat = current_status.skat_as_ints
+        self.cards = [Card(skat[0], rotation=0, center=(self.rect.left + 140, 60)),
+                      Card(skat[1], rotation=0, center=(self.rect.left + 205, 60))]
+        self.scores = current_status.current_scores
         self.sync()
 
     def sync(self):
@@ -203,20 +202,17 @@ class StatusBar(object):
 class CardGameRenderer(object):
     def __init__(self, game_file, rect, names):
         with open(game_file, 'rb') as f:
-            game_data = pickle.load(f)
+            self.status_list = pickle.load(f)
 
-        self.hands = game_data['init_hands']
-        self.actions = game_data['actions']
-        self.all_scores = game_data['historical_scores']
-        self.final_scores = game_data['final_scores']
-        self.performed_actions = 0
-        self.done = False
+        self.current_index = 0
+
         self.rect = Rect(*rect)
 
         game_rect = Rect(top=self.rect.top + 200,
                          bottom=self.rect.bottom,
                          left=self.rect.left,
                          right=int(0.8*self.rect.right+0.2*self.rect.left))
+
         history_rect = Rect(top=self.rect.top,
                          bottom=self.rect.bottom,
                          left=game_rect.right,
@@ -227,28 +223,41 @@ class CardGameRenderer(object):
                            left=self.rect.left,
                            right=int(0.8 * self.rect.right + 0.2 * self.rect.left))
 
-        self.hand_renderers = [Hand(hand, i, game_rect) for i, hand in enumerate(self.hands[:3])]
+        self.hand_renderers = [Hand(player_num=i, rect=game_rect) for i in range(3)]
         self.trick_renderer = Trick(game_rect)
         self.history_renderer = History(history_rect, num_tricks=10)
-        self.status_bar_renderer = StatusBar(status_rect, skat=self.hands[3], names=names)
+        self.status_bar_renderer = StatusBar(status_rect, names=names)
 
-    def perform_action(self):
-        if all([x is not None for x in self.trick_renderer.cards]):
-            self.trick_renderer.end()
-            self.status_bar_renderer.update_scores(self.all_scores[-1 + self.performed_actions // 3])
+        self.update_all()
 
-            if self.performed_actions == 30:
-                self.status_bar_renderer.update_scores(self.final_scores)
-                self.done = True
 
-            return
+    def next(self):
+        if self.current_index + 1 < len(self.status_list):
+            self.current_index += 1
+        self.update_all()
 
-        card, player = self.actions[self.performed_actions]
-        self.hand_renderers[player].remove(card)
-        self.history_renderer.add(player, self.performed_actions // 3, card)
-        self.trick_renderer.add(player, card)
+    def previous(self):
+        if self.current_index > 0:
+            self.current_index -= 1
+        self.update_all()
 
-        self.performed_actions += 1
+    def update_all(self):
+        current_status = self.status_list[self.current_index]
+
+        hands_as_ints = current_status.hands_as_ints
+        for hand, hand_renderer in zip(hands_as_ints, self.hand_renderers):
+            hand_renderer.set_cards(hand)
+
+        current_trick = current_status.current_trick_as_ints
+        starter_of_trick = current_status.starter_of_current_trick
+        self.trick_renderer.set_cards(current_trick, starter_of_trick)
+
+        all_played_cards = current_status.played_cards_as_ints
+        player_ids = current_status.players_of_all_played_cards
+        self.history_renderer.set_history(all_played_cards, player_ids)
+
+        self.status_bar_renderer.set_status(current_status)
+
 
     def render_all(self, screen):
         for renderer in self.hand_renderers:

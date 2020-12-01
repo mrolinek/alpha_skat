@@ -32,7 +32,7 @@ screen.fill((0, 0, 0))
 
 
 rect = (0, 0, HEIGHT, WIDTH)
-renderer = CardGameRenderer("durchmarsch.gm", rect, names)
+renderer = CardGameRenderer("some_game2.gm", rect, names)
 
 file_num = 0
 running = True
@@ -43,9 +43,12 @@ while running:
     for event in pygame.event.get():
         # Check for KEYDOWN event
         if event.type == KEYDOWN:
-            renderer.perform_action()
+            if event.key == K_LEFT:
+                renderer.previous()
+            if event.key == K_RIGHT:
+                renderer.next()
+
             snap = True
-            running = not renderer.done
         # Check for QUIT event. If QUIT, then set running to false.
         elif event.type == QUIT:
             running = False

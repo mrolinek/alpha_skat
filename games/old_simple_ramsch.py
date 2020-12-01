@@ -1,14 +1,8 @@
-#from game import Game
+
 import pickle
 
 import numpy as np
 import random
-
-import matplotlib.pyplot as plt
-from PIL import Image
-from matplotlib.animation import FuncAnimation
-import matplotlib.animation as animation
-
 
 
 class Ramsch(object):
@@ -132,33 +126,6 @@ class Ramsch(object):
             pickle.dump(to_save, f)
 
 
-    def animate(self):
-
-        def get_image(card):
-            fname = f"/is/sg/mrolinek/Projects/alpha_skat/imgs/{card}.jpg"
-            return Image.open(fname)
-
-        f, axarr = plt.subplots(10, 3, figsize=(3, 12))
-
-        for row in range(10):
-            for col in range(3):
-                axarr[row, col].axis('off')
-
-        ims = []
-        for (i, (action, player)) in enumerate(self.taken_actions):
-            row = i // 3
-            col = player
-            img = get_image(action)
-            res = axarr[row, col].imshow(img, aspect='auto', animated=True)
-            ims.append(res)
-
-        sum_ims = [ims[:i + 1] for i in range(len(ims))]
-
-        ani = animation.ArtistAnimation(f, sum_ims, interval=500)
-        ani.save("/is/sg/mrolinek/Projects/alpha_skat/a.mp4")
-
-
-
 
 game = Ramsch()
 
@@ -171,7 +138,7 @@ for i in range(200):
         action = random.choice(choices)
         game.take_action(action)
 
-    if  max(game.scores) > 100:
+    if max(game.scores) > 100:
         print(game.final_scores)
         game.save("durchmarsch.gm")
         exit(0)
