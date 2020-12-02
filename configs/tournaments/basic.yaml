@@ -1,17 +1,20 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 50
-save_games: false
+num_games: 3
+save_games: true
 player_params:
   player_one:
     name: FullStateMCTSPlayer
-    num_mcts_rollouts: 100
-    exploration_weight: 10.0
+    num_mcts_rollouts: 1600
+    exploration_weight: 2.0
+    softmax_temperature: 0.1
   player_two:
     name: FullStateMCTSPlayer
-    num_mcts_rollouts: 100
-    exploration_weight: 10.0
+    num_mcts_rollouts: 1600
+    exploration_weight: 2.0
+    softmax_temperature: 0.1
   player_three:
     name: FullStateMCTSPlayer
-    num_mcts_rollouts: 100
-    exploration_weight: 1.0
+    num_mcts_rollouts: 1600
+    exploration_weight: 2.0
+    softmax_temperature: 0.1

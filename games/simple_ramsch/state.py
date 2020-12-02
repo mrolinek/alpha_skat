@@ -31,7 +31,7 @@ class RamschState(GameState):
         for i in range(self.hand_rows):
             if i != player_id:
                 copied_state[self.status_rows + i] = 0
-        return copied_state
+        return copied_state[:-self.redundant_rows]
 
     @property
     def hands_as_ints(self):

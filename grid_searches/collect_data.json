@@ -1,0 +1,11 @@
+{
+  "optimization_procedure_name": "small_data_collection",
+  "__import__": "grid_searches/base_cpu.json",
+  "fixed_params": {
+    "__import_promise__": "configs/tournaments/basic.yaml"
+  },
+  "restarts": 100,
+  "samples": null,
+  "hyperparam_list": [
+  ]
+}

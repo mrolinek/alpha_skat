@@ -32,7 +32,7 @@ screen.fill((0, 0, 0))
 
 
 rect = (0, 0, HEIGHT, WIDTH)
-renderer = CardGameRenderer("some_game2.gm", rect, names)
+renderer = CardGameRenderer("tmp/game_1.gm", rect, names)
 
 file_num = 0
 running = True
