@@ -88,7 +88,7 @@ def main(player_params, num_games, game_name, working_dir, save_games):
     for i in tqdm(range(num_games)):
         new_game = Game(game_name, last_state)
         last_state = new_game.play(players)
-        total_scores += last_state.current_scores
+        total_scores += last_state.current_scores - last_state.current_scores.mean()
         if save_games:
             new_game.save(os.path.join(working_dir, f"game_{i+1}.gm"))
 

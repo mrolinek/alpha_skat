@@ -1,7 +1,7 @@
 {
   "results_dir": "/is/cluster/work/{$USER}/experiments/alpha_skat/evals",
   "git_params": {
-    "branch": "master",
+    "branch": "main",
     "commit": null
   },
   "script_relative_path": "game.py",
@@ -11,7 +11,7 @@
     "request_cpus": 1,
     "request_gpus": 0,
     "cuda_requirement": null,
-    "memory_in_mb": 80000,
+    "memory_in_mb": 16000,
     "bid": 30
   }
 }

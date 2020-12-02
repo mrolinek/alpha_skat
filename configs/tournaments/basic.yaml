@@ -1,6 +1,6 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 200
+num_games: 50
 save_games: false
 player_params:
   player_one:
