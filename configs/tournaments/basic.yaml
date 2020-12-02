@@ -1,20 +1,15 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 3
+num_games: 500
 save_games: true
 player_params:
   player_one:
-    name: FullStateMCTSPlayer
-    num_mcts_rollouts: 1600
-    exploration_weight: 2.0
-    softmax_temperature: 0.1
+    name: RandomPlayer
   player_two:
-    name: FullStateMCTSPlayer
-    num_mcts_rollouts: 1600
-    exploration_weight: 2.0
-    softmax_temperature: 0.1
+    name: NNPlayer
+    checkpoint_path: tmp/lightning_logs/version_13/checkpoints/epoch=0.ckpt
   player_three:
     name: FullStateMCTSPlayer
-    num_mcts_rollouts: 1600
+    num_mcts_rollouts: 25
     exploration_weight: 2.0
     softmax_temperature: 0.1

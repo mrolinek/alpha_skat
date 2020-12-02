@@ -12,6 +12,8 @@ cluster = {editable = true,git = "git@gitlab.tuebingen.mpg.de/mrolinek/cluster_u
 pillow = "*"
 pygame = "*"
 tqdm = "*"
+pytorch-lightning = "*"
+torchvision = "*"
 
 [requires]
 python_version = "3.6"

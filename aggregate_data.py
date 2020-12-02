@@ -13,13 +13,15 @@ def concat_np_files(np_file_list):
 
 def aggregate_all_data(source_dir, target_dir):
     all_state_files = glob.glob(f"{source_dir}/**/inputs*.npy", recursive=True)
-    all_states = concat_np_files(all_state_files)
+    all_states = concat_np_files(sorted(all_state_files))
+
+    print(all_states.mean())
 
     all_mask_files = glob.glob(f"{source_dir}/**/masks*.npy", recursive=True)
-    all_masks = concat_np_files(all_mask_files)
+    all_masks = concat_np_files(sorted(all_mask_files))
 
     all_probs_files = glob.glob(f"{source_dir}/**/probs*.npy", recursive=True)
-    all_probs = concat_np_files(all_probs_files)
+    all_probs = concat_np_files(sorted(all_probs_files))
 
     print(all_states.shape)
     print(all_masks.shape)

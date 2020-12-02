@@ -1,0 +1,8 @@
+working_dir: tmp
+num_epochs: 100
+data_params:
+  data_dir: '/is/rg/al/Data/alpha_skat/simple_ramsch_level_0_GT'
+  batch_size: 64
+model_params:
+  learning_rate: 0.0003
+  arch_name: resnet18

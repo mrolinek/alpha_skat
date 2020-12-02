@@ -1,6 +1,7 @@
 import os
 import pickle
 import random
+import torch
 
 from cluster import cluster_main
 
@@ -10,7 +11,9 @@ from tqdm import tqdm
 
 from algorithms.mcts_basic import MCTS, CardGameNode
 from games.simple_ramsch.ruleset import RamschRuleset
+from train_model import TrainSkatModel
 from utils import np_one_hot
+
 
 name_to_ruleset = dict(simple_ramsch=RamschRuleset)
 
@@ -24,6 +27,24 @@ def softmax(x):
 class RandomPlayer(object):
     def play(self, state, available_actions, ruleset):
         return random.choice(available_actions)
+
+    def save_data(self, working_dir, player_id):
+        pass
+
+
+class NNPlayer(object):
+    def __init__(self, checkpoint_path):
+        self.model = TrainSkatModel.load_from_checkpoint(checkpoint_path)
+
+    def play(self, state, available_actions, ruleset):
+        action_mask = np_one_hot(available_actions, dim=32)
+
+        nn_state = state.nn_state_for_player_view(state.active_player)[None, ...]
+        nn_state = torch.Tensor(nn_state)
+        probs = self.model(nn_state)[0].data * action_mask
+        action = int(torch.max(probs, dim=-1)[1].item())
+        assert action in available_actions
+        return action
 
     def save_data(self, working_dir, player_id):
         pass
@@ -116,7 +137,7 @@ class Game(object):
             pickle.dump(self.status_storage, f)
 
 
-player_dict = dict(FullStateMCTSPlayer=FullStateMCTSPlayer, RandomPlayer=RandomPlayer)
+player_dict = dict(FullStateMCTSPlayer=FullStateMCTSPlayer, RandomPlayer=RandomPlayer, NNPlayer=NNPlayer)
 
 
 def spawn_player(name, **kwargs):
