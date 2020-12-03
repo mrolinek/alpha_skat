@@ -1,13 +1,13 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 500
+num_games: 1000
 save_games: true
 player_params:
   player_one:
     name: RandomPlayer
   player_two:
     name: NNPlayer
-    checkpoint_path: tmp/lightning_logs/version_13/checkpoints/epoch=0.ckpt
+    checkpoint_path: tmp/lightning_logs/version_31/checkpoints/epoch=6.ckpt
   player_three:
     name: FullStateMCTSPlayer
     num_mcts_rollouts: 25

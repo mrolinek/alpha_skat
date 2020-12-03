@@ -43,23 +43,32 @@ class TrainSkatModel(pl.LightningModule):
         return F.softmax(x, dim=1)
 
     def _logits_to_loss_and_probs(self, predicted_probs, masks, true_probs):
-        corrected_probs = predicted_probs / (torch.sum(predicted_probs, dim=1, keepdim=True) + 1e-5)
+        masked_probs = predicted_probs * masks
+        corrected_probs = masked_probs / (torch.sum(masked_probs, dim=1, keepdim=True) + 1e-5)
         errors = torch.sum(torch.abs(corrected_probs - true_probs), dim=1, keepdim=True)
         loss = (errors / torch.sum(masks, dim=1, keepdim=True)).mean()
         return loss, corrected_probs
 
+    def _logits_to_loss_and_probs2(self, predicted_probs, masks, true_probs):
+        loss = torch.abs(predicted_probs - true_probs).mean()
+        return loss, predicted_probs
+
+    def _logits_to_loss_and_probs3(self, predicted_probs, masks, true_probs):
+        loss = F.kl_div(torch.log(predicted_probs+1e-5), true_probs).mean()
+        return loss, predicted_probs
+
     def training_step(self, batch, batch_idx):
         inputs, masks, probs = batch
-        predicted_probs = self(inputs) * masks
-        loss, corrected_probs = self._logits_to_loss_and_probs(predicted_probs, masks, probs)
+        predicted_probs = self(inputs)
+        loss, corrected_probs = self._logits_to_loss_and_probs3(predicted_probs, masks, probs)
         return loss
 
     def validation_step(self, batch, batch_idx):
         inputs, masks, probs = batch
 
-        predicted_probs = self(inputs) * masks
-        loss, corrected_probs = self._logits_to_loss_and_probs(predicted_probs, masks, probs)
-        pred_ys = torch.argmax(corrected_probs, dim=1)
+        predicted_probs = self(inputs)
+        loss, corrected_probs = self._logits_to_loss_and_probs3(predicted_probs, masks, probs)
+        pred_ys = torch.argmax(corrected_probs * masks, dim=1)
         true_ys = torch.argmax(probs, dim=1)
         acc = accuracy(pred_ys, true_ys)
 

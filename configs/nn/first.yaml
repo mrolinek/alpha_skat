@@ -1,8 +1,8 @@
 working_dir: tmp
-num_epochs: 5
+num_epochs: 10
 data_params:
   data_dir: '/is/rg/al/Data/alpha_skat/simple_ramsch_level0_big'
   batch_size: 64
 model_params:
   learning_rate: 0.0003
-  arch_name: resnext50_32x4d
+  arch_name: resnet50

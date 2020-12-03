@@ -4,7 +4,7 @@
   "script_relative_path": "game.py",
   "fixed_params": {
     "__import_promise__": "configs/nn/first.yaml",
-    "num_epochs": 10
+    "num_epochs": 15
   },
   "restarts": 1,
   "samples": null,
