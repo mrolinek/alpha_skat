@@ -42,7 +42,7 @@ class NNPlayer(object):
         nn_state = state.nn_state_for_player_view(state.active_player)[None, ...]
         nn_state = torch.Tensor(nn_state)
         probs = self.model(nn_state)[0].data * action_mask
-        action = int(torch.max(probs, dim=-1)[1].item())
+        action = int(torch.argmax(probs, dim=-1).item())
         assert action in available_actions
         return action
 

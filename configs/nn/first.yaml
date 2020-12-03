@@ -1,8 +1,15 @@
 working_dir: tmp
-num_epochs: 10
+num_epochs: 7
 data_params:
   data_dir: '/is/rg/al/Data/alpha_skat/simple_ramsch_level0_big'
-  batch_size: 64
+  batch_size: 128
 model_params:
-  learning_rate: 0.0003
-  arch_name: resnet50
+  learning_rate: 0.001
+  arch_params:
+    name: TransformerModel
+    input_dim: 32
+    seq_len: 36
+    num_heads: 16
+    dim_feedforward: 2048
+    num_layers: 2
+    dropout: 0.0

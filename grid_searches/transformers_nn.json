@@ -1,0 +1,25 @@
+{
+  "optimization_procedure_name": "nn_transformer",
+  "__import__": "grid_searches/base_gpu.json",
+  "script_relative_path": "train_model.py",
+  "fixed_params": {
+    "__import_promise__": "configs/nn/first.yaml",
+    "num_epochs": 10
+  },
+  "restarts": 1,
+  "samples": null,
+  "hyperparam_list": [
+    {
+      "param": "model_params.learning_rate",
+      "values": [1e-4, 2e-4, 5e-4, 1e-3, 2e-3]
+    },
+    {
+      "param": "model_params.arch_params.num_heads",
+      "values": [4, 8, 16, 32]
+    },
+    {
+      "param": "model_params.arch_params.num_layers",
+      "values": [2, 4, 8]
+    }
+  ]
+}

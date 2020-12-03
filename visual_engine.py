@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pygame
 import pygame.camera
@@ -31,8 +32,10 @@ screen = pygame.display.set_mode([WIDTH, HEIGHT])
 screen.fill((0, 0, 0))
 
 
+
+
 rect = (0, 0, HEIGHT, WIDTH)
-renderer = CardGameRenderer("tmp/game_1.gm", rect, names)
+renderer = CardGameRenderer(sys.argv[1], rect, names)
 
 file_num = 0
 running = True

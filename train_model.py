@@ -6,7 +6,11 @@ from cluster import cluster_main
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split, TensorDataset
-from torchvision.models import resnet18, resnet50, resnet101, resnext50_32x4d
+from torchvision.models import resnet18, resnet50, resnet101, resnext50_32x4d, mobilenet_v2
+from efficientnet_pytorch import EfficientNet
+from nn_utils.models import TransformerModel
+
+
 from torchvision import transforms
 import pytorch_lightning as pl
 from pytorch_lightning.metrics.functional import accuracy
@@ -21,24 +25,41 @@ from pytorch_lightning.metrics import Metric
 def check(x):
     assert not torch.isnan(x).any()
 
-arch_dict = dict(resnet18=resnet18, resnet50=resnet50, resnet101=resnet101, resnext50_32x4d=resnext50_32x4d)
+arch_dict = dict(resnet18=resnet18, resnet50=resnet50, resnet101=resnet101, resnext50_32x4d=resnext50_32x4d,
+                 mobilenet_v2=mobilenet_v2, TransformerModel=TransformerModel)
+
+def get_efficient_net(name, num_classes, **arch_params):
+    return EfficientNet.from_name(name, num_classes=num_classes, **arch_params)
+
+
+
+def get_arch(name, num_classes, **arch_params):
+    if 'efficientnet' in name.lower():
+        return get_efficient_net(name, num_classes=num_classes, **arch_params)
+    else:
+        return arch_dict[name](num_classes=num_classes, **arch_params)
+
+
 
 class TrainSkatModel(pl.LightningModule):
 
-    def __init__(self, learning_rate, arch_name):
+    def __init__(self, learning_rate, arch_params):
 
         super().__init__()
         self.learning_rate = learning_rate
         self.save_hyperparameters()
 
         # Define PyTorch model
-        self.model = arch_dict[arch_name](num_classes=32)
+        self.model = get_arch(**arch_params, num_classes=32)
+        self.convolutional = 'transformer' not in arch_params.name.lower()
 
         self.eval_accuracy = 0.0
         self.eval_loss = 0.0
 
     def forward(self, x):
-        x = x[:, None, ...].repeat([1, 3, 1, 1]) - 0.02
+        x = x - 0.02
+        if self.convolutional:
+            x = x[:, None, ...].repeat([1, 3, 1, 1])
         x = self.model(x)
         return F.softmax(x, dim=1)
 
@@ -54,7 +75,7 @@ class TrainSkatModel(pl.LightningModule):
         return loss, predicted_probs
 
     def _logits_to_loss_and_probs3(self, predicted_probs, masks, true_probs):
-        loss = F.kl_div(torch.log(predicted_probs+1e-5), true_probs).mean()
+        loss = F.kl_div(torch.log(predicted_probs+1e-5), true_probs, reduction='batchmean')
         return loss, predicted_probs
 
     def training_step(self, batch, batch_idx):
@@ -62,6 +83,12 @@ class TrainSkatModel(pl.LightningModule):
         predicted_probs = self(inputs)
         loss, corrected_probs = self._logits_to_loss_and_probs3(predicted_probs, masks, probs)
         return loss
+
+    def training_epoch_end(self, training_step_outputs):
+        losses = [it['loss'] for it in training_step_outputs]
+        self.train_loss = sum(losses) / len(losses)
+        self.log('train_loss', self.train_loss, prog_bar=False)
+
 
     def validation_step(self, batch, batch_idx):
         inputs, masks, probs = batch
@@ -85,11 +112,12 @@ class TrainSkatModel(pl.LightningModule):
 
     @property
     def metrics(self):
-        return dict(eval_acc=self.eval_accuracy, eval_loss=self.eval_loss)
+        return dict(eval_acc=self.eval_accuracy, eval_loss=self.eval_loss, train_loss=self.train_loss)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        return optimizer
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=9, gamma=0.1)
+        return [optimizer], [scheduler]
 
 
 class SkatDataModule(pl.LightningDataModule):
@@ -123,6 +151,7 @@ def main(working_dir, num_epochs, model_params, data_params):
     model = TrainSkatModel(**model_params)
     trainer = pl.Trainer(gpus=1, max_epochs=num_epochs, progress_bar_refresh_rate=20, default_root_dir=working_dir)
     trainer.fit(model, data_module)
+    print(model.metrics)
     return model.metrics
 
 
