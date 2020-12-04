@@ -38,49 +38,71 @@ class RamschRuleset(Ruleset):
 
         return 1 + card // 8  # Other suits in order
 
+
+    @staticmethod
+    def card_playabilities(trick):
+        if len(trick) == 0 or len(trick) == 3:
+            return [0] * 32  # Every card can be played initially
+        starting_suit = RamschRuleset.suit(trick[0])
+
+        def priority(card):
+            return 1 if RamschRuleset.suit(card) == starting_suit else 0  # Follow suit!
+
+        return [priority(card) for card in range(32)]
+
+    @staticmethod
+    def card_priorities(starting_card):
+        assert starting_card is not None
+        starting_suit = RamschRuleset.suit(starting_card)
+
+        def priority(card):
+            if RamschRuleset.suit(card) == 0:
+                return card + 100  # Jacks have highet priority (and are sorted in order)
+            elif RamschRuleset.suit(card) != starting_suit:  # Wrong suits have min priority
+                return -1
+            else:
+                value = card % 8
+                if value == 3:  # It is a ten
+                    value = 6.5  # Put it between king and ace
+                return value
+
+        return [priority(card) for card in range(32)]
+
     @staticmethod
     def available_actions(state):
         active_player_hand = one_hot_to_int(state.all_hands[state.active_player])
-        #print(f"Player {state.active_player} has hand {}")
         trick = state.current_trick_as_ints
-        if not trick or len(trick) == 3:
-            return active_player_hand
+        playabilities = RamschRuleset.card_playabilities(trick)
+        playability_on_hand = [(playabilities[card], card) for card in active_player_hand]
 
-        leading_suit = RamschRuleset.suit(trick[0])
-        same_suit = [card for card in active_player_hand if RamschRuleset.suit(card) == leading_suit]
-        if same_suit:
-            return np.array(same_suit)
-
-        return active_player_hand
+        max_playability = max(playability_on_hand)[0]
+        equal_to_max = [card for val, card in playability_on_hand if val == max_playability]
+        ans = np.array(equal_to_max)
+        return ans
 
     @staticmethod
     def trick_winner(trick):
         # returns index of card winning the trick (index 0 is first card played)
         assert len(trick) == 3
-        suits = [RamschRuleset.suit(c) for c in trick]
-        if 0 in suits:  # trumf was played
-            candidates = [(c, ind) for ind, c in enumerate(trick) if RamschRuleset.suit(c) == 0]
-            assert len(candidates) > 0
-            winning_card = sorted(candidates)[-1][1]  # index of winner card (suits are sorted)
-        else:
-            candidate_values = [(c % 8, ind) for ind, c in enumerate(trick) if RamschRuleset.suit(c) == suits[0]]
 
-            # Make ten high
-            candidate_values = [(c if c != 3 else c + 3.5, ind) for c, ind in candidate_values]
-            # Those that follow the first suit
-            assert len(candidate_values) > 0
-            winning_card = sorted(candidate_values)[-1][1]  # index of winner card (suits are sorted)
+        priorities = RamschRuleset.card_priorities(starting_card=trick[0])
+        priorities_in_trick = [priorities[card] for card in trick]
+        max_priority = max(priorities_in_trick)
 
-        return winning_card
+        equal_to_max = [i for i, prio in enumerate(priorities_in_trick) if prio == max_priority]
+        assert len(equal_to_max) == 1  # Unique trick winner
+        return equal_to_max[0]
 
     @staticmethod
     def do_action(state, action):
         new_state = RamschState(state.full_state.copy())
+        trick = new_state.current_trick_as_ints
+        implications = RamschRuleset.action_public_implications(trick, action)
+        new_state.apply_public_implications(*implications)
         new_state.play_card(action)
 
         if new_state.num_played_cards % 3 == 0:  # End of trick
-            active_trick = new_state.current_trick
-            trick = [one_hot_to_int(card)[0] for card in active_trick]
+            trick = new_state.current_trick_as_ints
             winning_card = RamschRuleset.trick_winner(trick)
             winning_player = (winning_card + new_state.active_player) % 3
             current_scores = new_state.current_scores
@@ -95,6 +117,14 @@ class RamschRuleset(Ruleset):
             new_state.current_scores = current_scores
 
         return new_state
+
+    @staticmethod
+    def action_public_implications(trick, action):
+        has_cards = [action]
+        playabilities = RamschRuleset.card_playabilities(trick)
+        doesnt_have_cards = [card for card in range(32) if playabilities[card] > playabilities[action]]
+        return has_cards, doesnt_have_cards
+
 
     @staticmethod
     def finalize_scores(state):

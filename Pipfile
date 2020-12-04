@@ -15,6 +15,7 @@ tqdm = "*"
 pytorch-lightning = "*"
 torchvision = "*"
 efficientnet-pytorch = "*"
+python-sat = "*"
 
 [requires]
 python_version = "3.6"

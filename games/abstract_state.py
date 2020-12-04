@@ -19,10 +19,15 @@ class GameState(ABC):
     hand_rows = None
     gameplay_rows = None
     redundant_rows = None
+    public_info_rows = None
     columns = 32
 
     def __init__(self, full_state=None):
-        self.total_rows = self.status_rows + self.hand_rows + self.gameplay_rows + self.redundant_rows
+        self.total_rows = (self.status_rows+
+                           self.hand_rows+
+                           self.gameplay_rows+
+                           self.redundant_rows+
+                           self.public_info_rows)
         if full_state is not None:
             if not full_state.shape == (self.total_rows, self.columns):
                 raise TypeError(f"State for game {self.name} must have shape"

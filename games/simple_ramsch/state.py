@@ -6,6 +6,7 @@ class RamschState(GameState):
     status_rows = 2
     hand_rows = 4
     gameplay_rows = 30
+    public_info_rows = 4
     redundant_rows = 3
 
     dealer = ArraySlice(slice_in_array=(0, slice(0, 3)))
@@ -15,6 +16,8 @@ class RamschState(GameState):
     active_player = ArraySlice(slice_in_array=(-1, 4))
     all_hands = ArraySlice(slice_in_array=slice(status_rows, status_rows + hand_rows))
     skat = ArraySlice(slice_in_array=status_rows + hand_rows-1)
+    public_info = ArraySlice(slice_in_array=slice(status_rows + hand_rows+ gameplay_rows,
+                                                  status_rows + hand_rows+ gameplay_rows + public_info_rows))
     played_cards = ArraySlice(slice_in_array=slice(status_rows + hand_rows, status_rows + hand_rows+gameplay_rows))
 
     @classmethod
@@ -80,6 +83,17 @@ class RamschState(GameState):
 
         self.num_played_cards = self.num_played_cards + 1
         self.active_player = (self.active_player + 1) % 3
+
+    def apply_public_implications(self, has_cards, doesnt_have_cards):
+        current_row = self.status_rows + self.hand_rows + self.gameplay_rows + self.active_player
+        for card in has_cards:
+            assert self.full_state[current_row][card] == 0
+            self.full_state[current_row][card] = 1
+
+        for card in doesnt_have_cards:
+            if self.full_state[current_row][card] == 0:
+                self.full_state[current_row][card] = -1
+
 
     @property
     def current_trick(self):

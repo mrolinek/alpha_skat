@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader, random_split, TensorDataset
 from torchvision.models import resnet18, resnet50, resnet101, resnext50_32x4d, mobilenet_v2
 from efficientnet_pytorch import EfficientNet
 from nn_utils.models import TransformerModel
-
+from torchvision.models.resnet import _resnet, Bottleneck, BasicBlock
 
 from torchvision import transforms
 import pytorch_lightning as pl
@@ -36,6 +36,9 @@ def get_efficient_net(name, num_classes, **arch_params):
 def get_arch(name, num_classes, **arch_params):
     if 'efficientnet' in name.lower():
         return get_efficient_net(name, num_classes=num_classes, **arch_params)
+    elif name == 'resnet9':
+        return _resnet('resnet', BasicBlock, pretrained=False, progress=None,
+                               num_classes=num_classes, layers=[1, 1, 1, 1])
     else:
         return arch_dict[name](num_classes=num_classes, **arch_params)
 
@@ -116,7 +119,7 @@ class TrainSkatModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=9, gamma=0.1)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
         return [optimizer], [scheduler]
 
 
