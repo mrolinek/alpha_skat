@@ -39,6 +39,7 @@ renderer = CardGameRenderer(sys.argv[1], rect, names)
 
 file_num = 0
 running = True
+record_video = False
 while running:
 
     snap = False
@@ -61,7 +62,7 @@ while running:
     screen.fill((0, 0, 0))
     renderer.render_all(screen)
 
-    if snap:
+    if snap and record_video:
         filename = "snaps/%04d.png" % file_num
         pygame.image.save(screen, filename)
         file_num += 1
@@ -70,6 +71,6 @@ while running:
     pygame.display.flip()
 
 # Done! Time to quit.
-
-os.system(f"ffmpeg -r 1 -f image2 -i snaps/%04d.png -y -qscale 0 -s {WIDTH}x{HEIGHT} result.avi")
+if record_video:
+    os.system(f"ffmpeg -r 1 -f image2 -i snaps/%04d.png -y -qscale 0 -s {WIDTH}x{HEIGHT} result.avi")
 pygame.quit()

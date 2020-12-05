@@ -6,7 +6,7 @@ class RamschState(GameState):
     status_rows = 2
     hand_rows = 4
     gameplay_rows = 30
-    public_info_rows = 4
+    implication_rows = 4
     redundant_rows = 3
 
     dealer = ArraySlice(slice_in_array=(0, slice(0, 3)))
@@ -16,8 +16,8 @@ class RamschState(GameState):
     active_player = ArraySlice(slice_in_array=(-1, 4))
     all_hands = ArraySlice(slice_in_array=slice(status_rows, status_rows + hand_rows))
     skat = ArraySlice(slice_in_array=status_rows + hand_rows-1)
-    public_info = ArraySlice(slice_in_array=slice(status_rows + hand_rows+ gameplay_rows,
-                                                  status_rows + hand_rows+ gameplay_rows + public_info_rows))
+    implications = ArraySlice(slice_in_array=slice(status_rows + hand_rows+ gameplay_rows,
+                                                  status_rows + hand_rows+ gameplay_rows + implication_rows))
     played_cards = ArraySlice(slice_in_array=slice(status_rows + hand_rows, status_rows + hand_rows+gameplay_rows))
 
     @classmethod
@@ -29,12 +29,32 @@ class RamschState(GameState):
         instance.active_player = (dealer + 1) % 3
         return instance
 
-    def nn_state_for_player_view(self, player_id):
-        copied_state = self.full_state.copy()
+    def state_for_player(self, player_id):
+        new_state = RamschState(self.full_state.copy())
+        new_state.add_private_implications(player_id)
         for i in range(self.hand_rows):
             if i != player_id:
-                copied_state[self.status_rows + i] = 0
-        return copied_state[:-self.redundant_rows]
+                new_state.full_state[self.status_rows + i] = 0
+        return new_state
+
+    @property
+    def state_for_nn(self):
+        return self.full_state[:-self.redundant_rows]
+
+    @staticmethod
+    def full_state_from_partial_and_initial_hands(partial_state, initial_hands):
+        inconsistencies = partial_state.all_hands * (1-initial_hands)
+        assert inconsistencies.sum() == 0  # guess on initial hands shouldn't be inconsistent
+        still_in_play = 1 - np.sum(partial_state.played_cards, axis=0)
+        full_state = RamschState(partial_state.full_state.copy())
+        full_state.all_hands = initial_hands * still_in_play[None, :]
+        return full_state
+
+    def add_private_implications(self, player_id):
+        active_row = self.status_rows + self.hand_rows + self.gameplay_rows + self.active_player
+        for card in self.hands_as_ints[player_id]:
+            assert self.full_state[active_row][card] != -1
+            self.full_state[active_row][card] = 1
 
     @property
     def hands_as_ints(self):
@@ -48,7 +68,7 @@ class RamschState(GameState):
     @property
     def current_trick_as_ints(self):
         # returns a list of ints
-        return sum([list(one_hot_to_int(card)) for card in self.current_trick], [])
+        return [one_hot_to_int(card)[0] for card in self.current_trick]
 
     @property
     def played_cards_as_ints(self):
@@ -58,7 +78,6 @@ class RamschState(GameState):
     @property
     def players_of_all_played_cards(self):
         return self.player_id_sequence[:self.num_played_cards]
-
 
     @property
     def starter_of_current_trick(self):
@@ -87,19 +106,19 @@ class RamschState(GameState):
     def apply_public_implications(self, has_cards, doesnt_have_cards):
         current_row = self.status_rows + self.hand_rows + self.gameplay_rows + self.active_player
         for card in has_cards:
-            assert self.full_state[current_row][card] == 0
+            assert self.full_state[current_row][card] != -1
             self.full_state[current_row][card] = 1
 
         for card in doesnt_have_cards:
-            if self.full_state[current_row][card] == 0:
+            if self.full_state[current_row][card] == 0:  # If status unknown
                 self.full_state[current_row][card] = -1
-
 
     @property
     def current_trick(self):
         finished_tricks = max(0, (self.num_played_cards-1) // 3)
         first_row = self.status_rows + self.hand_rows + 3*finished_tricks
-        return self.full_state[first_row:first_row+3]
+        num_cards_in_trick = self.num_played_cards - 3*finished_tricks
+        return self.full_state[first_row:first_row+num_cards_in_trick]
 
     def check_sound(self):
         card_row_start = self.status_rows

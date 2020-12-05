@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-
 class ArraySlice(object):
     def __init__(self, slice_in_array):
         self.slice_in_array = slice_in_array
@@ -19,7 +18,7 @@ class GameState(ABC):
     hand_rows = None
     gameplay_rows = None
     redundant_rows = None
-    public_info_rows = None
+    implication_rows = None
     columns = 32
 
     def __init__(self, full_state=None):
@@ -27,7 +26,7 @@ class GameState(ABC):
                            self.hand_rows+
                            self.gameplay_rows+
                            self.redundant_rows+
-                           self.public_info_rows)
+                           self.implication_rows)
         if full_state is not None:
             if not full_state.shape == (self.total_rows, self.columns):
                 raise TypeError(f"State for game {self.name} must have shape"
@@ -46,10 +45,9 @@ class GameState(ABC):
         return self.full_state[self.status_rows + player_id]
 
     @abstractmethod
-    def nn_state_for_player_view(self, player_id):
+    def state_for_nn(self):
         pass
 
-    @property
-    def nn_state(self):
-        return self.full_state[:-self.redundant_rows]
-
+    @abstractmethod
+    def state_for_player(self, player_id):
+        pass

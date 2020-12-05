@@ -20,7 +20,7 @@ def add_basic_clauses(solver):
 
 
 
-def solve(public_state_array, num_solutions):
+def solve_sat_for_init_hands(public_state_array, num_solutions):
     solver = Minicard()
     add_basic_clauses(solver)
 
