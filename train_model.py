@@ -1,5 +1,7 @@
+import itertools
 import os
 import random
+from functools import lru_cache
 
 import torch
 from cluster import cluster_main
@@ -59,6 +61,8 @@ class TrainSkatModel(pl.LightningModule):
         self.eval_accuracy = 0.0
         self.eval_loss = 0.0
 
+        self.status_rows = 2
+
     def forward(self, x):
         x = x - 0.02
         if self.convolutional:
@@ -81,8 +85,40 @@ class TrainSkatModel(pl.LightningModule):
         loss = F.kl_div(torch.log(predicted_probs+1e-5), true_probs, reduction='batchmean')
         return loss, predicted_probs
 
+
+    @staticmethod
+    @lru_cache(maxsize=32)
+    def _permutation_for_i(random_integer):
+        all_suit_permutations =list(itertools.permutations([0, 1, 2, 3]))
+        fixed_suit_permuation = all_suit_permutations[random_integer]
+        permutation = []
+        for i in range(32):
+            if i % 8 == 4:
+                permutation.append(i)
+            else:
+                suit = i // 8
+                new_suit = fixed_suit_permuation[suit]
+                permutation.append(i % 8 + 8*new_suit)
+
+        idx = np.empty_like(permutation)
+        idx[permutation] = np.arange(len(permutation))
+        return tuple(idx)
+
+
+    def _get_random_permutation(self):
+        random_integer = random.randint(0, 23)
+        return TrainSkatModel._permutation_for_i(random_integer)
+
+    def _apply_augmentation(self, inputs, masks, probs):
+        perm = np.array(self._get_random_permutation())
+        inputs[:, self.status_rows:, :] = inputs[:, self.status_rows:, perm]
+        return inputs, masks[:, perm], probs[:, perm]
+
+
+
     def training_step(self, batch, batch_idx):
         inputs, masks, probs = batch
+        inputs, masks, probs = self._apply_augmentation(inputs, masks, probs)
         predicted_probs = self(inputs)
         loss, corrected_probs = self._logits_to_loss_and_probs3(predicted_probs, masks, probs)
         return loss
@@ -119,7 +155,7 @@ class TrainSkatModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.1)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=250, gamma=0.1)
         return [optimizer], [scheduler]
 
 
@@ -142,7 +178,7 @@ class SkatDataModule(pl.LightningDataModule):
         self.train_set, self.val_set = random_split(full_dataset, [train_size, length - train_size])
 
     def train_dataloader(self):
-        return DataLoader(self.train_set, batch_size=self.batch_size, num_workers=2)
+        return DataLoader(self.train_set, batch_size=self.batch_size, num_workers=2, shuffle=True)
 
     def val_dataloader(self):
         return DataLoader(self.val_set, batch_size=self.batch_size, num_workers=2)

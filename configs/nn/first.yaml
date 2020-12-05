@@ -1,5 +1,5 @@
 working_dir: tmp
-num_epochs: 30
+num_epochs: 300
 data_params:
   data_dir: '/is/rg/al/Data/alpha_skat/new_ramsch_level_0'
   batch_size: 128

@@ -27,13 +27,15 @@ class NNPlayer(Player):
     def __init__(self, checkpoint_path):
         super().__init__()
         self.model = TrainSkatModel.load_from_checkpoint(checkpoint_path)
+        self.model.eval()
 
     def play(self, state, available_actions, ruleset):
         action_mask = np_one_hot(available_actions, dim=32)
 
         nn_state = state.state_for_nn[None, ...]
         nn_state = torch.Tensor(nn_state)
-        probs = self.model(nn_state)[0].data * action_mask
+        with torch.no_grad():
+            probs = self.model(nn_state)[0].data * action_mask
         action = int(torch.argmax(probs, dim=-1).item())
         assert action in available_actions
         return action

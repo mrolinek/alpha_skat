@@ -1,6 +1,6 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 500
+num_games: 2000
 save_games: false
 player_params:
   player_one:
@@ -9,4 +9,4 @@ player_params:
     name: RandomPlayer
   player_three:
     name: NNPlayer
-    checkpoint_path: tmp/lightning_logs/version_69/checkpoints/epoch=29.ckpt
+    checkpoint_path: tmp/lightning_logs/version_75/checkpoints/epoch=297.ckpt
