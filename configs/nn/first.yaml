@@ -1,7 +1,7 @@
 working_dir: tmp
-num_epochs: 6
+num_epochs: 30
 data_params:
-  data_dir: '/is/rg/al/Data/alpha_skat/simple_ramsch_level0_big'
+  data_dir: '/is/rg/al/Data/alpha_skat/new_ramsch_level_0'
   batch_size: 128
 model_params:
   learning_rate: 0.001

@@ -31,7 +31,7 @@ class NNPlayer(Player):
     def play(self, state, available_actions, ruleset):
         action_mask = np_one_hot(available_actions, dim=32)
 
-        nn_state = state.nn_state_for_player_view(state.active_player)[None, ...]
+        nn_state = state.state_for_nn[None, ...]
         nn_state = torch.Tensor(nn_state)
         probs = self.model(nn_state)[0].data * action_mask
         action = int(torch.argmax(probs, dim=-1).item())

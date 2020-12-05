@@ -1,11 +1,11 @@
 {
-  "optimization_procedure_name": "new_mcts_small_data",
+  "optimization_procedure_name": "new_mcts_big_data",
   "__import__": "grid_searches/base_cpu.json",
   "fixed_params": {
     "__import_promise__": "configs/tournaments/basic.yaml",
-    "num_games": 2
+    "num_games": 20
   },
-  "restarts": 100,
+  "restarts": 1000,
   "samples": null,
   "hyperparam_list": [
   ]
