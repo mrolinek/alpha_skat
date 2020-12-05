@@ -139,3 +139,5 @@ snaps/
 *.avi
 
 tmp/
+
+*.prof

@@ -10,3 +10,9 @@ def np_one_hot(values, dim):
 def one_hot_to_int(np_arr):
     return np.where(np_arr == 1)[0]
 
+@njit
+def one_hot_arrays_to_list_of_ints(arrays):
+    ones = np.argwhere(arrays == 1)
+    return ones[:, 1]
+    #return np.array([one_hot_to_int(arr) for arr in arrays])
+

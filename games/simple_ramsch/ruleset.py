@@ -12,6 +12,48 @@ dealing_pattern = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2,
                                 0, 0, 0, 1, 1, 1, 2, 2, 2])
 card_values = [0, 0, 0, 10, 2, 3, 4, 11]
 
+from numba import jit
+
+
+@jit(nopython=True)
+def suit(card):
+    if (card % 8) == 4:
+        return 0  # Trumf
+
+    return 1 + card // 8  # Other suits in order
+
+
+@jit(nopython=True)
+def card_playabilities(trick):
+    if len(trick) == 0 or len(trick) == 3:
+        return [0] * 32  # Every card can be played initially
+    starting_suit = suit(trick[0])
+
+    def priority(card):
+        return 1 if suit(card) == starting_suit else 0  # Follow suit!
+
+    return [priority(card) for card in range(32)]
+
+
+@jit(nopython=True)
+def card_priorities(starting_card):
+    assert starting_card is not None
+    starting_suit = suit(starting_card)
+
+    def priority(card):
+        if suit(card) == 0:
+            return card + 100  # Jacks have highet priority (and are sorted in order)
+        elif suit(card) != starting_suit:  # Wrong suits have min priority
+            return -1
+        else:
+            value = card % 8
+            if value == 3:  # It is a ten
+                value = 6.5  # Put it between king and ace
+            return value
+
+    return [priority(card) for card in range(32)]
+
+
 
 class RamschRuleset(Ruleset):
 
@@ -31,48 +73,14 @@ class RamschRuleset(Ruleset):
 
         return RamschState.from_initial_hands(hands, dealer)
 
-    @staticmethod
-    def suit(card):
-        if (card % 8) == 4:
-            return 0  # Trumf
-
-        return 1 + card // 8  # Other suits in order
 
 
-    @staticmethod
-    def card_playabilities(trick):
-        if len(trick) == 0 or len(trick) == 3:
-            return [0] * 32  # Every card can be played initially
-        starting_suit = RamschRuleset.suit(trick[0])
-
-        def priority(card):
-            return 1 if RamschRuleset.suit(card) == starting_suit else 0  # Follow suit!
-
-        return [priority(card) for card in range(32)]
-
-    @staticmethod
-    def card_priorities(starting_card):
-        assert starting_card is not None
-        starting_suit = RamschRuleset.suit(starting_card)
-
-        def priority(card):
-            if RamschRuleset.suit(card) == 0:
-                return card + 100  # Jacks have highet priority (and are sorted in order)
-            elif RamschRuleset.suit(card) != starting_suit:  # Wrong suits have min priority
-                return -1
-            else:
-                value = card % 8
-                if value == 3:  # It is a ten
-                    value = 6.5  # Put it between king and ace
-                return value
-
-        return [priority(card) for card in range(32)]
 
     @staticmethod
     def available_actions(state):
         active_player_hand = one_hot_to_int(state.all_hands[state.active_player])
         trick = state.current_trick_as_ints
-        playabilities = RamschRuleset.card_playabilities(trick)
+        playabilities = card_playabilities(trick)
         playability_on_hand = [(playabilities[card], card) for card in active_player_hand]
 
         max_playability = max(playability_on_hand)[0]
@@ -85,7 +93,7 @@ class RamschRuleset(Ruleset):
         # returns index of card winning the trick (index 0 is first card played)
         assert len(trick) == 3
 
-        priorities = RamschRuleset.card_priorities(starting_card=trick[0])
+        priorities = card_priorities(starting_card=trick[0])
         priorities_in_trick = [priorities[card] for card in trick]
         max_priority = max(priorities_in_trick)
 
@@ -121,7 +129,7 @@ class RamschRuleset(Ruleset):
     @staticmethod
     def action_public_implications(trick, action):
         has_cards = [action]
-        playabilities = RamschRuleset.card_playabilities(trick)
+        playabilities = card_playabilities(trick)
         doesnt_have_cards = [card for card in range(32) if playabilities[card] > playabilities[action]]
         return has_cards, doesnt_have_cards
 

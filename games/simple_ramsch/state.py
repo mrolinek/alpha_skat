@@ -1,6 +1,17 @@
 from games.abstract_state import GameState, ArraySlice
-from utils import np_one_hot, one_hot_to_int
+from utils import np_one_hot, one_hot_to_int, one_hot_arrays_to_list_of_ints
 import numpy as np
+from numba import jit
+
+
+@jit(nopython=True)
+def extract_tricks(full_state, first_row, num_played_cards):
+    finished_tricks = max(0, (num_played_cards - 1) // 3)
+    first_row_of_trick = first_row + 3 * finished_tricks
+    num_cards_in_trick = num_played_cards - 3 * finished_tricks
+    return full_state[first_row_of_trick:first_row_of_trick + num_cards_in_trick]
+
+
 
 class RamschState(GameState):
     status_rows = 2
@@ -68,7 +79,7 @@ class RamschState(GameState):
     @property
     def current_trick_as_ints(self):
         # returns a list of ints
-        return [one_hot_to_int(card)[0] for card in self.current_trick]
+        return one_hot_arrays_to_list_of_ints(self.current_trick)
 
     @property
     def played_cards_as_ints(self):
@@ -115,10 +126,11 @@ class RamschState(GameState):
 
     @property
     def current_trick(self):
-        finished_tricks = max(0, (self.num_played_cards-1) // 3)
-        first_row = self.status_rows + self.hand_rows + 3*finished_tricks
-        num_cards_in_trick = self.num_played_cards - 3*finished_tricks
-        return self.full_state[first_row:first_row+num_cards_in_trick]
+        return extract_tricks(self.full_state, self.status_rows + self.hand_rows, self.num_played_cards)
+        #finished_tricks = max(0, (self.num_played_cards-1) // 3)
+        #first_row = self.status_rows + self.hand_rows + 3*finished_tricks
+        #num_cards_in_trick = self.num_played_cards - 3*finished_tricks
+        #return self.full_state[first_row:first_row+num_cards_in_trick]
 
     def check_sound(self):
         card_row_start = self.status_rows
