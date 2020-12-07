@@ -9,22 +9,19 @@ player_params:
     num_mcts_rollouts: 4000
     guessed_hands: 10
     exploration_weight: 2.0
-    softmax_temperature: 0.1
   player_two:
     name: MCTSPlayer
     num_mcts_rollouts: 4000
     guessed_hands: 10
     exploration_weight: 2.0
-    softmax_temperature: 0.1
     #name: RandomPlayer   #HardcodedPlayer
     #name: NNPlayer
     #checkpoint_path: tmp/lightning_logs/version_67/checkpoints/epoch=5.ckpt
   player_three:
-    name: NNPlayer
-    checkpoint_path: tmp/lightning_logs/version_76/checkpoints/epoch=11.ckpt
+    #name: NNPlayer
+    #checkpoint_path: tmp/lightning_logs/version_76/checkpoints/epoch=11.ckpt
     #name: HardcodedPlayer
-    #name: MCTSPlayer
-    #num_mcts_rollouts: 4000
-    #guessed_hands: 10
-    #exploration_weight: 2.0
-    #softmax_temperature: 0.1
+    name: MCTSPlayer
+    num_mcts_rollouts: 4000
+    guessed_hands: 10
+    exploration_weight: 2.0
