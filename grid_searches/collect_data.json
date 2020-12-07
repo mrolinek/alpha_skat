@@ -1,5 +1,5 @@
 {
-  "optimization_procedure_name": "new_mcts_big_data",
+  "optimization_procedure_name": "mcts_q_value_big",
   "__import__": "grid_searches/base_cpu.json",
   "fixed_params": {
     "__import_promise__": "configs/tournaments/basic.yaml",

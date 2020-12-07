@@ -1,12 +1,12 @@
 working_dir: tmp
-num_epochs: 12
+num_epochs: 30
 data_params:
   data_dir: '/is/rg/al/Data/alpha_skat/new_ramsch_level_0_big'
   batch_size: 128
 model_params:
-  learning_rate: 0.001
+  learning_rate: 0.0002
   arch_params:
-    name: resnet9
+    name: resnet50
     #name: TransformerModel
     #input_dim: 32
     #seq_len: 36

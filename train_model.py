@@ -21,7 +21,7 @@ from pytorch_lightning import metrics
 import numpy as np
 
 
-from pytorch_lightning.metrics import Metric
+scaling_constant = 50.0
 
 
 def check(x):
@@ -43,7 +43,6 @@ def get_arch(name, num_classes, **arch_params):
                                num_classes=num_classes, layers=[1, 1, 1, 1])
     else:
         return arch_dict[name](num_classes=num_classes, **arch_params)
-
 
 
 class TrainSkatModel(pl.LightningModule):
@@ -68,7 +67,11 @@ class TrainSkatModel(pl.LightningModule):
         if self.convolutional:
             x = x[:, None, ...].repeat([1, 3, 1, 1])
         x = self.model(x)
-        return F.softmax(x, dim=1)
+        return x
+
+    def q_value_loss(self, predicted_qs, masks, real_qs):
+        errors = (predicted_qs - real_qs)*masks
+        return (errors*errors).sum(dim=-1).mean()
 
     def _logits_to_loss_and_probs(self, predicted_probs, masks, true_probs):
         masked_probs = predicted_probs * masks
@@ -117,10 +120,10 @@ class TrainSkatModel(pl.LightningModule):
 
 
     def training_step(self, batch, batch_idx):
-        inputs, masks, probs = batch
-        inputs, masks, probs = self._apply_augmentation(inputs, masks, probs)
-        predicted_probs = self(inputs)
-        loss, corrected_probs = self._logits_to_loss_and_probs3(predicted_probs, masks, probs)
+        inputs, masks, q_values = batch
+        inputs, masks, q_values = self._apply_augmentation(inputs, masks, q_values)
+        predicted_qs = self(inputs)
+        loss = self.q_value_loss(predicted_qs, masks, q_values / scaling_constant)
         return loss
 
     def training_epoch_end(self, training_step_outputs):
@@ -132,9 +135,9 @@ class TrainSkatModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         inputs, masks, probs = batch
 
-        predicted_probs = self(inputs)
-        loss, corrected_probs = self._logits_to_loss_and_probs3(predicted_probs, masks, probs)
-        pred_ys = torch.argmax(corrected_probs * masks, dim=1)
+        predicted_qs = self(inputs)
+        loss = self._logits_to_loss_and_probs3(predicted_qs, masks, probs)
+        pred_ys = torch.argmax(predicted_qs + 1000 * (1-masks), dim=1)
         true_ys = torch.argmax(probs, dim=1)
         acc = accuracy(pred_ys, true_ys)
 
@@ -155,7 +158,7 @@ class TrainSkatModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=250, gamma=0.1)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=45, gamma=0.1)
         return [optimizer], [scheduler]
 
 
@@ -171,8 +174,8 @@ class SkatDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         inputs = torch.Tensor(np.load(os.path.join(self.data_dir, "inputs.npy")))
         masks = torch.Tensor(np.load(os.path.join(self.data_dir, "masks.npy")))
-        probs = torch.Tensor(np.load(os.path.join(self.data_dir, "probs.npy")))
-        full_dataset = TensorDataset(inputs, masks, probs)
+        q_values = torch.Tensor(np.load(os.path.join(self.data_dir, "qvalues.npy")))
+        full_dataset = TensorDataset(inputs, masks, q_values)
         length = inputs.shape[0]
         train_size = int(0.9 * length)
         self.train_set, self.val_set = random_split(full_dataset, [train_size, length - train_size])

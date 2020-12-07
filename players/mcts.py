@@ -15,27 +15,27 @@ def softmax(x):
 
 
 class MCTSPlayer(Player):
-    def __init__(self, num_mcts_rollouts, exploration_weight, softmax_temperature, guessed_hands):
+    def __init__(self, num_mcts_rollouts, exploration_weight, guessed_hands):
         super().__init__()
         self.guessed_hands = guessed_hands
-        self.softmax_temperature = softmax_temperature
         self.exploration_weight = exploration_weight
         self.num_mcts_rollouts = num_mcts_rollouts
 
         self.action_masks = []
-        self.predicted_probabilities = []
+        self.q_values = []
         self.input_states = []
 
     def collect_data(self, available_actions, scores, state):
         action_mask = np_one_hot(available_actions, dim=32)
         learned_values = [(val, action) for (action, val) in scores.items()]
-        probabilities = softmax(self.softmax_temperature * np.array([it[0] for it in learned_values]))
-        masked_probabilities = np.zeros_like(action_mask)
-        for prob, (logit, action) in zip(probabilities, learned_values):
-            masked_probabilities[action] = prob
+        #probabilities = softmax(self.softmax_temperature * np.array([it[0] for it in learned_values]))
+        #masked_probabilities = np.zeros_like(action_mask)
+        q_values = np.zeros_like(action_mask)
+        for (q_value, action) in learned_values:
+            q_values[action] = q_value
 
         self.action_masks.append(action_mask[None, ...])
-        self.predicted_probabilities.append(masked_probabilities[None, ...])
+        self.q_values.append(q_values[None, ...])
         self.input_states.append(state.state_for_nn[None, ...])
 
     def play(self, state, available_actions, ruleset):
@@ -82,6 +82,6 @@ class MCTSPlayer(Player):
         all_masks = np.concatenate(self.action_masks, axis=0)
         np.save(all_masks_file, all_masks)
 
-        all_probs_file = os.path.join(working_dir, f"probs_{player_id}.npy")
-        all_probs = np.concatenate(self.predicted_probabilities, axis=0)
+        all_probs_file = os.path.join(working_dir, f"qvalues_{player_id}.npy")
+        all_probs = np.concatenate(self.q_values, axis=0)
         np.save(all_probs_file, all_probs)
