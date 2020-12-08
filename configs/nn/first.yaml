@@ -1,7 +1,8 @@
 working_dir: tmp
 num_epochs: 12
 data_params:
-  data_dir: '/is/rg/al/Data/alpha_skat/new_ramsch_level_0_big'
+  data_dir: '/is/rg/al/Data/alpha_skat/mcts_q_value'
+  #data_dir: '/is/rg/al/Data/alpha_skat/new_ramsch_level_0_big'
   batch_size: 128
 model_params:
   learning_rate: 0.001

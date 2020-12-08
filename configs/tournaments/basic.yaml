@@ -4,23 +4,18 @@ num_games: 2
 save_games: false
 player_params:
   player_one:
-    #name: HardcodedRamschPlayer
     name: MCTSPlayer
-    num_mcts_rollouts: 4000
+    num_mcts_rollouts: 2000
     guessed_hands: 10
     exploration_weight: 2.0
+    value_function_checkpoint: tmp/lightning_logs/version_120/checkpoints/epoch=11.ckpt
   player_two:
     name: MCTSPlayer
-    num_mcts_rollouts: 4000
+    num_mcts_rollouts: 2000
     guessed_hands: 10
     exploration_weight: 2.0
-    #name: RandomPlayer   #HardcodedPlayer
-    #name: NNPlayer
-    #checkpoint_path: tmp/lightning_logs/version_67/checkpoints/epoch=5.ckpt
+    value_function_checkpoint: tmp/lightning_logs/version_120/checkpoints/epoch=11.ckpt
   player_three:
-    #name: NNPlayer
-    #checkpoint_path: tmp/lightning_logs/version_76/checkpoints/epoch=11.ckpt
-    #name: HardcodedPlayer
     name: MCTSPlayer
     num_mcts_rollouts: 4000
     guessed_hands: 10

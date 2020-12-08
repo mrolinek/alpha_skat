@@ -1,7 +1,10 @@
 import random
+import torch
 from abc import ABC, abstractmethod
 from collections import defaultdict
 import math
+
+from utils import np_one_hot
 
 
 class MCTS(object):
@@ -20,7 +23,7 @@ class MCTS(object):
             raise RuntimeError(f"choose called on terminal node {node}")
 
         if node not in self.children:
-            return node.find_random_child()
+            raise RuntimeError(f"No iterations performed {node}")
 
         def score(n):
             if self.N[n] == 0:
@@ -35,7 +38,6 @@ class MCTS(object):
         leaf = path[-1]
         self._expand(leaf)
         reward = self._simulate(leaf)
-
         self._backpropagate(path, reward)
 
     def _select(self, node):
@@ -69,6 +71,7 @@ class MCTS(object):
                 rewards = node.rewards()
                 return rewards
             node = node.find_random_child()
+
 
     def _backpropagate(self, path, reward):
         "Send the reward back up to the ancestors of the leaf"
@@ -121,6 +124,11 @@ class MultiplayerMCTSNode(ABC):
         return [0.0, 0.0, 0.0]
 
     @abstractmethod
+    def value_function_estimate(self, model):
+        pass
+
+
+    @abstractmethod
     def __hash__(self):
         return None
 
@@ -129,6 +137,7 @@ class MultiplayerMCTSNode(ABC):
         "Nodes must be comparable"
         return True
 
+scaling_constant = 10.0
 
 class CardGameNode(MultiplayerMCTSNode):
     def __init__(self, ruleset, current_state):
@@ -136,22 +145,42 @@ class CardGameNode(MultiplayerMCTSNode):
         self.current_state = current_state
         self.active_player = self.current_state.active_player
         self.hashed = None
+        self._actions = None
+        self._value = None
+
+
+    @property
+    def actions(self):
+        if self._actions is None:
+            self._actions = self.ruleset.available_actions(self.current_state)
+        return self._actions
+
 
     def current_player(self):
         return self.active_player
 
     def find_children(self):
-        actions = self.ruleset.available_actions(self.current_state)
-        next_states = [self.ruleset.do_action(self.current_state, action) for action in actions]
+        next_states = [self.ruleset.do_action(self.current_state, action) for action in self.actions]
         return set([CardGameNode(self.ruleset, next_state) for next_state in next_states])
 
     def find_random_child(self):
-        actions = self.ruleset.available_actions(self.current_state)
-        next_state = self.ruleset.do_action(self.current_state, random.choice(actions))
+        next_state = self.ruleset.do_action(self.current_state, random.choice(self.actions))
         return CardGameNode(self.ruleset, next_state)
 
     def is_terminal(self):
         return self.ruleset.is_finished(self.current_state)
+
+    def value_function_estimate(self, model):
+        if self._value is not None:
+            return self._value
+        with torch.no_grad():
+            nn_state = self.current_state.state_for_player(self.active_player).state_for_nn
+            nn_state = torch.Tensor(nn_state[None, ...])
+            q_values = model(nn_state)[0].numpy()
+            one_hot_actions = np_one_hot(self.actions, dim=32)
+            self._value = scaling_constant * (q_values + 1000 * (one_hot_actions - 1)).max()
+            return self._value
+
 
     def rewards(self):
         rewards = self.ruleset.final_rewards(self.current_state)

@@ -35,8 +35,8 @@ class NNPlayer(Player):
         nn_state = state.state_for_nn[None, ...]
         nn_state = torch.Tensor(nn_state)
         with torch.no_grad():
-            probs = self.model(nn_state)[0].data * action_mask
-        action = int(torch.argmax(probs, dim=-1).item())
+            q_values = self.model(nn_state)[0].data + 1000 * (action_mask -1)
+        action = int(torch.argmax(q_values, dim=-1).item())
         assert action in available_actions
         return action
 

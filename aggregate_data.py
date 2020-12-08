@@ -20,7 +20,7 @@ def aggregate_all_data(source_dir, target_dir):
     all_mask_files = glob.glob(f"{source_dir}/**/masks*.npy", recursive=True)
     all_masks = concat_np_files(sorted(all_mask_files))
 
-    all_probs_files = glob.glob(f"{source_dir}/**/probs*.npy", recursive=True)
+    all_probs_files = glob.glob(f"{source_dir}/**/qvalues*.npy", recursive=True)
     all_probs = concat_np_files(sorted(all_probs_files))
 
     print(all_states.shape)
@@ -28,7 +28,7 @@ def aggregate_all_data(source_dir, target_dir):
     print(all_probs.shape)
     np.save(os.path.join(target_dir, "inputs.npy"), all_states)
     np.save(os.path.join(target_dir, "masks.npy"), all_masks)
-    np.save(os.path.join(target_dir, "probs.npy"), all_probs)
+    np.save(os.path.join(target_dir, "qvalues.npy"), all_probs)
 
 if __name__ == "__main__":
     source_dir = sys.argv[1]

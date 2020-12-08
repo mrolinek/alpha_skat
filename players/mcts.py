@@ -2,8 +2,10 @@ import os
 from collections import defaultdict
 
 from algorithms.mcts_basic import MCTS, CardGameNode
+from algorithms.mcts_parallel_value import MCTS_parallel
 from players.simple import Player
 from sat_solver import solve_sat_for_init_hands
+from train_model import TrainSkatModel
 from utils import np_one_hot
 
 import numpy as np
@@ -15,11 +17,15 @@ def softmax(x):
 
 
 class MCTSPlayer(Player):
-    def __init__(self, num_mcts_rollouts, exploration_weight, guessed_hands):
+    def __init__(self, num_mcts_rollouts, exploration_weight, guessed_hands, value_function_checkpoint=None):
         super().__init__()
         self.guessed_hands = guessed_hands
         self.exploration_weight = exploration_weight
         self.num_mcts_rollouts = num_mcts_rollouts
+        if value_function_checkpoint is not None:
+            self.model = TrainSkatModel.load_from_checkpoint(value_function_checkpoint)
+        else:
+            self.model = None
 
         self.action_masks = []
         self.q_values = []
@@ -28,8 +34,6 @@ class MCTSPlayer(Player):
     def collect_data(self, available_actions, scores, state):
         action_mask = np_one_hot(available_actions, dim=32)
         learned_values = [(val, action) for (action, val) in scores.items()]
-        #probabilities = softmax(self.softmax_temperature * np.array([it[0] for it in learned_values]))
-        #masked_probabilities = np.zeros_like(action_mask)
         q_values = np.zeros_like(action_mask)
         for (q_value, action) in learned_values:
             q_values[action] = q_value
@@ -46,10 +50,14 @@ class MCTSPlayer(Player):
 
         def values_for_starting_state(init_full_state, iterations, scores):
             starting_node = CardGameNode(ruleset, init_full_state)
-            mcts_runner = MCTS(self.exploration_weight)
-
-            for i in range(iterations):
-                mcts_runner.do_rollout(starting_node)
+            if self.model:
+                mcts_runner = MCTS_parallel(self.exploration_weight, self.model)
+                for i in range(3):
+                    mcts_runner.do_rollouts(starting_node, 100)
+            else:
+                mcts_runner = MCTS(self.exploration_weight)
+                for i in range(iterations):
+                    mcts_runner.do_rollout(starting_node)
 
             learned_values = mcts_runner.choose(starting_node)
             for child, val in learned_values:
