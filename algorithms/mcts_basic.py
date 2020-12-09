@@ -5,11 +5,12 @@ from collections import defaultdict
 import math
 
 from utils import np_one_hot
+import numpy as np
 
 
 class MCTS(object):
     def __init__(self, exploration_weight):
-        self.Q = defaultdict(int)  # total reward of each node
+        self.Q = defaultdict(lambda: np.array([0.0, 0.0, 0.0]))  # total reward of each node
         self.N = defaultdict(int)  # total visit count for each node
         self.children = dict()  # children of each node
         self.exploration_weight = exploration_weight
@@ -25,12 +26,13 @@ class MCTS(object):
         if node not in self.children:
             raise RuntimeError(f"No iterations performed {node}")
 
-        def score(n):
+        def all_value_functions(n):
             if self.N[n] == 0:
                 return float("-inf")  # avoid unseen moves
             return self.Q[n] / self.N[n]  # average reward
 
-        return [(child, score(child)) for child in self.children[node]]
+        res = [(child, all_value_functions(child)) for child in self.children[node]]
+        return res
 
     def do_rollout(self, node):
         "Make the tree one layer better. (Train for one iteration.)"
@@ -75,10 +77,9 @@ class MCTS(object):
 
     def _backpropagate(self, path, reward):
         "Send the reward back up to the ancestors of the leaf"
-        active_players = [path[0].active_player] + [node.active_player for node in path[:-1]]
-        for node, active_player in zip(reversed(path), reversed(active_players)):
+        for node in reversed(path):
             self.N[node] += 1
-            self.Q[node] += reward[active_player]
+            self.Q[node] += reward
 
 
     def _uct_select(self, node):
@@ -86,14 +87,16 @@ class MCTS(object):
 
         # All children of node should already be expanded:
         assert all(n in self.children for n in self.children[node])
-
+        assert all(n in self.N for n in self.children[node])
+        
         log_N_vertex = math.log(self.N[node])
-        avgs = [self.Q[n] / self.N[n] for n in self.children[node]]
+        player = node.active_player
+        avgs = [self.Q[n][player] / self.N[n] for n in self.children[node]]
         rng = max(1.0, max(avgs) - min(avgs))
 
         def uct(n):
             "Upper confidence bound for trees"
-            return self.Q[n] / self.N[n] + rng*self.exploration_weight * math.sqrt(
+            return self.Q[n][player] / self.N[n] + rng*self.exploration_weight * math.sqrt(
                 log_N_vertex / self.N[n]
             )
 
@@ -137,7 +140,7 @@ class MultiplayerMCTSNode(ABC):
         "Nodes must be comparable"
         return True
 
-scaling_constant = 10.0
+scaling_constant = 50.0
 
 class CardGameNode(MultiplayerMCTSNode):
     def __init__(self, ruleset, current_state):

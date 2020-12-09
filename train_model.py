@@ -21,7 +21,7 @@ from pytorch_lightning import metrics
 import numpy as np
 
 
-scaling_constant = 10.0
+scaling_constant = 50.0
 
 
 def check(x):
@@ -69,8 +69,12 @@ class TrainSkatModel(pl.LightningModule):
         x = self.model(x)
         return x
 
-    def value_loss(self, predicted_qs, masks, real_qs):
-        loss_v = ((torch.max(predicted_qs, dim=1)[0] - torch.max(real_qs, dim=1)[0]) ** 2).mean()
+    def value_loss(self, predicted_qs, masks, real_qs, squared=True):
+        action_nums = torch.sum(masks, dim=1, keepdim=True)
+        if squared:
+            loss_v = (((torch.sum(masks*predicted_qs, dim=1) - torch.sum(real_qs, dim=1)) / action_nums) ** 2).mean()
+        else:
+            loss_v = (torch.max(masks*predicted_qs, dim=1)[0] - torch.max(real_qs, dim=1)[0]).abs().mean()
         return loss_v
 
     def policy_loss(self, predicted_qs, masks, true_qs):
@@ -79,7 +83,10 @@ class TrainSkatModel(pl.LightningModule):
         loss = F.kl_div(torch.log_softmax(predicted_qs, dim=1), true_probs, reduction='batchmean')
         return loss
 
-
+    def prob_weighted_loss(self, predicted_qs, masks, true_qs):
+        true_probs = torch.softmax(true_qs+1000*(masks-1), dim=1)*masks
+        return (true_probs * (predicted_qs - true_qs) ** 2).sum(dim=1).mean()
+    
     @staticmethod
     @lru_cache(maxsize=32)
     def _permutation_for_i(random_integer):
@@ -112,10 +119,11 @@ class TrainSkatModel(pl.LightningModule):
         inputs, masks, q_values = batch
         inputs, masks, q_values = self._apply_augmentation(inputs, masks, q_values)
         predicted_qs = self(inputs)
-        loss_kl = self.policy_loss(predicted_qs, masks, q_values / scaling_constant)
-        loss_v = self.value_loss(predicted_qs, masks, q_values / scaling_constant)
-        self.log('loss_v', loss_v, prog_bar=True)
-        return loss_kl + 0.1*loss_v
+        return self.prob_weighted_loss(predicted_qs, masks, q_values / scaling_constant)
+        #loss_kl = self.policy_loss(predicted_qs, masks, q_values / scaling_constant)
+        #loss_v = self.value_loss(predicted_qs, masks, q_values / scaling_constant)
+        #self.log('loss_v', loss_v, prog_bar=True)
+        #return loss_kl + 0.1*loss_v
 
     def training_epoch_end(self, training_step_outputs):
         losses = [it['loss'] for it in training_step_outputs]
@@ -127,7 +135,7 @@ class TrainSkatModel(pl.LightningModule):
         inputs, masks, true_qs = batch
 
         predicted_qs = self(inputs)
-        loss = self.value_loss(predicted_qs, masks, true_qs / scaling_constant)
+        loss = self.value_loss(predicted_qs * scaling_constant, masks, true_qs, squared=False)
         pred_ys = torch.argmax(predicted_qs + 1000 * (masks-1), dim=1)
         true_ys = torch.argmax(true_qs + 1000 * (masks-1), dim=1)
         acc = accuracy(pred_ys, true_ys)

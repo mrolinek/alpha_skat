@@ -24,6 +24,7 @@ class MCTSPlayer(Player):
         self.num_mcts_rollouts = num_mcts_rollouts
         if value_function_checkpoint is not None:
             self.model = TrainSkatModel.load_from_checkpoint(value_function_checkpoint)
+            self.model.cuda()
         else:
             self.model = None
 
@@ -53,7 +54,7 @@ class MCTSPlayer(Player):
             if self.model:
                 mcts_runner = MCTS_parallel(self.exploration_weight, self.model)
                 for i in range(3):
-                    mcts_runner.do_rollouts(starting_node, 100)
+                    mcts_runner.do_rollouts(starting_node, 300)
             else:
                 mcts_runner = MCTS(self.exploration_weight)
                 for i in range(iterations):
@@ -71,17 +72,17 @@ class MCTSPlayer(Player):
         for action, value in scores.items():
             scores[action] = scores[action] / len(init_full_states)
 
-        print(init_hands[0])
-        print(len(init_hands))
         print(scores)
         print('-----------------------------------------------------------------')
-        top_action = max(scores, key=scores.get)  # key with maximal value
+        player = int(state.active_player)
+        top_action = max(scores, key=lambda x: scores[x][player])  # key with maximal value
 
-        self.collect_data(available_actions, scores, state)
+        #self.collect_data(available_actions, scores, state)
         assert top_action in available_actions
         return top_action
 
     def save_data(self, working_dir, player_id):
+        return
         state_file = os.path.join(working_dir, f"inputs_{player_id}.npy")
         all_states = np.concatenate(self.input_states, axis=0)
         np.save(state_file, all_states)

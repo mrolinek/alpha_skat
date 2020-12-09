@@ -73,6 +73,14 @@ class RamschRuleset(Ruleset):
 
         return RamschState.from_initial_hands(hands, dealer)
 
+    @staticmethod
+    def rotate_init_state(init_state):
+        new_state = RamschState(init_state.full_state.copy())
+        new_state.dealer = init_state.dealer[np.array([2, 0, 1])]
+        new_state.active_player = (init_state.active_player + 1) % 3
+
+        new_state.all_hands = init_state.all_hands[np.array([2, 0, 1, 3])]
+        return new_state
 
 
 

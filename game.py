@@ -16,12 +16,24 @@ name_to_ruleset = dict(simple_ramsch=RamschRuleset)
 
 
 class Game(object):
-    def __init__(self, name, last_game_final_state):
-        self.ruleset = name_to_ruleset[name]
-        self.state = self.ruleset.generate_init_state(last_game_final_state)
-        self.status_storage = [self.state]
+    counter = 0
+    last_initial_state = None
 
-    def play(self, players):
+    def __init__(self, name, last_game_final_state, play_all_hand_rotations, players):
+        self.ruleset = name_to_ruleset[name]
+
+        if not play_all_hand_rotations or Game.counter % 3 == 0:
+            Game.last_initial_state = self.ruleset.generate_init_state(last_game_final_state)
+            self.state = Game.last_initial_state
+        else:
+            Game.last_initial_state = self.ruleset.rotate_init_state(Game.last_initial_state)
+            self.state = Game.last_initial_state
+
+        Game.counter += 1
+        self.status_storage = [self.state]
+        self.players = players
+
+    def play(self):
         while not self.ruleset.is_finished(self.state):
             self.state.check_sound()
             player = self.state.active_player
@@ -30,7 +42,7 @@ class Game(object):
             if len(available_actions) == 1:
                 action = available_actions[0]
             else:
-                action = players[player].play(state_for_player, available_actions, self.ruleset)
+                action = self.players[player].play(state_for_player, available_actions, self.ruleset)
             self.state = self.ruleset.do_action(self.state, action)
             self.status_storage.append(self.state)
 
@@ -39,12 +51,13 @@ class Game(object):
         return self.state
 
     def save(self, filename):
+        names = [p.name for p in self.players]
         with open(filename, 'wb') as f:
-            pickle.dump(self.status_storage, f)
+            pickle.dump((self.status_storage, names), f)
 
 
 @cluster_main
-def main(player_params, num_games, game_name, working_dir, save_games):
+def main(player_params, num_games, game_name, working_dir, save_games, play_all_hand_rotations):
     players = [get_player(**player_params.player_one),
                get_player(**player_params.player_two),
                get_player(**player_params.player_three)]
@@ -52,8 +65,8 @@ def main(player_params, num_games, game_name, working_dir, save_games):
     total_scores = np.array([0., 0., 0.])
     last_state = None
     for i in tqdm(range(num_games)):
-        new_game = Game(game_name, last_state)
-        last_state = new_game.play(players)
+        new_game = Game(game_name, last_state, play_all_hand_rotations, players)
+        last_state = new_game.play()
         total_scores += last_state.current_scores - last_state.current_scores.mean()
         if save_games:
             new_game.save(os.path.join(working_dir, f"game_{i+1}.gm"))

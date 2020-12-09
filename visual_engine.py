@@ -23,8 +23,6 @@ from pygame.locals import (
 
 save_video = True
 
-names = ["Dominik", "Michal", "Simon"]
-
 pygame.font.init()
 pygame.init()
 
@@ -35,7 +33,7 @@ screen.fill((0, 0, 0))
 
 
 rect = (0, 0, HEIGHT, WIDTH)
-renderer = CardGameRenderer(sys.argv[1], rect, names)
+renderer = CardGameRenderer(sys.argv[1], rect)
 
 file_num = 0
 running = True

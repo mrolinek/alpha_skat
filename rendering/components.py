@@ -200,9 +200,9 @@ class StatusBar(object):
 
 
 class CardGameRenderer(object):
-    def __init__(self, game_file, rect, names):
+    def __init__(self, game_file, rect):
         with open(game_file, 'rb') as f:
-            self.status_list = pickle.load(f)
+            self.status_list, self.names = pickle.load(f)
 
         self.current_index = 0
 
@@ -226,7 +226,7 @@ class CardGameRenderer(object):
         self.hand_renderers = [Hand(player_num=i, rect=game_rect) for i in range(3)]
         self.trick_renderer = Trick(game_rect)
         self.history_renderer = History(history_rect, num_tricks=10)
-        self.status_bar_renderer = StatusBar(status_rect, names=names)
+        self.status_bar_renderer = StatusBar(status_rect, names=self.names)
 
         self.update_all()
 

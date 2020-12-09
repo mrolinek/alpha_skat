@@ -1,13 +1,17 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 1000
+num_games: 48
 save_games: true
+play_all_hand_rotations: true
 player_params:
   player_one:
     name: NNPlayer
     checkpoint_path: tmp/lightning_logs/version_120/checkpoints/epoch=11.ckpt
   player_two:
-    name: RandomPlayer
-  player_three:
     name: NNPlayer
-    checkpoint_path: tmp/lightning_logs/version_75/checkpoints/epoch=297.ckpt
+    checkpoint_path: tmp/lightning_logs/version_120/checkpoints/epoch=11.ckpt
+  player_three:
+    name: MCTSPlayer
+    num_mcts_rollouts: 4000
+    guessed_hands: 10
+    exploration_weight: 2.0
