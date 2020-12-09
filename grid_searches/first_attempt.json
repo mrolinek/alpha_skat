@@ -1,19 +1,23 @@
 {
-  "optimization_procedure_name": "MCTS_params2",
+  "optimization_procedure_name": "MCTS_params_new",
   "__import__": "grid_searches/base_cpu.json",
   "fixed_params": {
-    "__import_promise__": "configs/tournaments/basic.yaml"
+    "__import_promise__": "configs/tournaments/test_nn_player.yaml"
   },
   "restarts": 20,
   "samples": null,
   "hyperparam_list": [
     {
       "param": "player_params.player_three.num_mcts_rollouts",
-      "values": [50, 100, 200, 400, 800, 1600]
+      "values": [1000, 2000, 3000, 4000, 5000]
     },
     {
       "param": "player_params.player_three.exploration_weight",
-      "values": [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
+      "values": [0.2, 0.5, 1.0, 2.0]
+    },
+    {
+      "param": "player_params.player_three.policy_function_checkpoint",
+      "values": ["", "/is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt"]
     }
   ]
 }

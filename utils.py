@@ -16,3 +16,8 @@ def one_hot_arrays_to_list_of_ints(arrays):
     return ones[:, 1]
     #return np.array([one_hot_to_int(arr) for arr in arrays])
 
+@njit
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum(axis=0) # only difference

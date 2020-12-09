@@ -4,12 +4,13 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 import math
 
-from utils import np_one_hot
+from utils import np_one_hot, softmax
 import numpy as np
 
 
 class MCTS(object):
-    def __init__(self, exploration_weight):
+    def __init__(self, exploration_weight, policy_model):
+        self.policy_model = policy_model
         self.Q = defaultdict(lambda: np.array([0.0, 0.0, 0.0]))  # total reward of each node
         self.N = defaultdict(int)  # total visit count for each node
         self.children = dict()  # children of each node
@@ -88,17 +89,28 @@ class MCTS(object):
         # All children of node should already be expanded:
         assert all(n in self.children for n in self.children[node])
         assert all(n in self.N for n in self.children[node])
+
+        if len(self.children[node]) == 1:
+            return list(self.children[node])[0]
         
         log_N_vertex = math.log(self.N[node])
         player = node.active_player
-        avgs = [self.Q[n][player] / self.N[n] for n in self.children[node]]
-        rng = max(1.0, max(avgs) - min(avgs))
+        avgs = {n: self.Q[n][player] / self.N[n] for n in self.children[node]}
+        min_avg, max_avg = min(avgs.values()), max(avgs.values())
+
+        normed_avgs = {n: (val - min_avg) / (max_avg - min_avg + 1e-5) for n, val in avgs.items()}
+
+        if self.policy_model is not None:
+            policy_probabilities = node.policy_estimate(self.policy_model)
+        else:
+            policy_probabilities = [1.0/32] * 32
 
         def uct(n):
             "Upper confidence bound for trees"
-            return self.Q[n][player] / self.N[n] + rng*self.exploration_weight * math.sqrt(
-                log_N_vertex / self.N[n]
-            )
+            policy_value = math.log(policy_probabilities[n.last_played_card]) / math.log(1+ self.N[n])
+            normalized_value_estimate = normed_avgs[n]
+            exploration_value = self.exploration_weight * math.sqrt(log_N_vertex / self.N[n])
+            return policy_value + normalized_value_estimate + exploration_value
 
         return max(self.children[node], key=uct)
 
@@ -130,6 +142,10 @@ class MultiplayerMCTSNode(ABC):
     def value_function_estimate(self, model):
         pass
 
+    @abstractmethod
+    def policy_estimate(self, model):
+        pass
+
 
     @abstractmethod
     def __hash__(self):
@@ -150,6 +166,7 @@ class CardGameNode(MultiplayerMCTSNode):
         self.hashed = None
         self._actions = None
         self._value = None
+        self._policy_probabilities = None
 
 
     @property
@@ -161,6 +178,10 @@ class CardGameNode(MultiplayerMCTSNode):
 
     def current_player(self):
         return self.active_player
+
+    @property
+    def last_played_card(self):
+        return self.current_state.current_trick_as_ints[-1]
 
     def find_children(self):
         next_states = [self.ruleset.do_action(self.current_state, action) for action in self.actions]
@@ -184,6 +205,16 @@ class CardGameNode(MultiplayerMCTSNode):
             self._value = scaling_constant * (q_values + 1000 * (one_hot_actions - 1)).max()
             return self._value
 
+    def policy_estimate(self, model):
+        if self._policy_probabilities is not None:
+            return self._policy_probabilities
+        with torch.no_grad():
+            nn_state = self.current_state.state_for_player(self.active_player).state_for_nn
+            nn_state = torch.Tensor(nn_state[None, ...])
+            q_values = model(nn_state)[0].numpy()
+            one_hot_actions = np_one_hot(self.actions, dim=32)
+            self._policy_probabilities = softmax(q_values + 1000 * (one_hot_actions - 1)) * one_hot_actions
+            return self._policy_probabilities
 
     def rewards(self):
         rewards = self.ruleset.final_rewards(self.current_state)

@@ -10,23 +10,24 @@ from utils import np_one_hot
 
 import numpy as np
 
-def softmax(x):
-    """Compute softmax values for each sets of scores in x."""
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum(axis=0) # only difference
-
 
 class MCTSPlayer(Player):
-    def __init__(self, num_mcts_rollouts, exploration_weight, guessed_hands, value_function_checkpoint=None):
+    def __init__(self, num_mcts_rollouts, exploration_weight, guessed_hands, value_function_checkpoint=None,
+                 policy_function_checkpoint=None):
         super().__init__()
         self.guessed_hands = guessed_hands
         self.exploration_weight = exploration_weight
         self.num_mcts_rollouts = num_mcts_rollouts
-        if value_function_checkpoint is not None:
-            self.model = TrainSkatModel.load_from_checkpoint(value_function_checkpoint)
-            self.model.cuda()
+        if value_function_checkpoint:
+            self.value_model = TrainSkatModel.load_from_checkpoint(value_function_checkpoint)
+            self.value_model.cuda()
         else:
-            self.model = None
+            self.value_model = None
+
+        if policy_function_checkpoint:
+            self.policy_model = TrainSkatModel.load_from_checkpoint(policy_function_checkpoint)
+        else:
+            self.policy_model = None
 
         self.action_masks = []
         self.q_values = []
@@ -51,18 +52,18 @@ class MCTSPlayer(Player):
 
         def values_for_starting_state(init_full_state, iterations, scores):
             starting_node = CardGameNode(ruleset, init_full_state)
-            if self.model:
-                mcts_runner = MCTS_parallel(self.exploration_weight, self.model)
+            if self.value_model:
+                mcts_runner = MCTS_parallel(self.exploration_weight, self.value_model)
                 for i in range(3):
                     mcts_runner.do_rollouts(starting_node, 300)
             else:
-                mcts_runner = MCTS(self.exploration_weight)
+                mcts_runner = MCTS(self.exploration_weight, self.policy_model)
                 for i in range(iterations):
                     mcts_runner.do_rollout(starting_node)
 
             learned_values = mcts_runner.choose(starting_node)
             for child, val in learned_values:
-                scores[child.current_state.current_trick_as_ints[-1]] += val
+                scores[child.last_played_card] += val
 
         iteration_per_sol = self.num_mcts_rollouts // len(init_full_states)
         scores = defaultdict(int)
