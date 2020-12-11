@@ -12,23 +12,17 @@ def concat_np_files(np_file_list):
 
 
 def aggregate_all_data(source_dir, target_dir):
-    all_state_files = glob.glob(f"{source_dir}/**/inputs*.npy", recursive=True)
-    all_states = concat_np_files(sorted(all_state_files))
+    def aggregate(file_pattern):
+        all_files = glob.glob(f"{source_dir}/**/{file_pattern}*.npy", recursive=True)
+        big_concat = concat_np_files(sorted(all_files))
+        np.save(os.path.join(target_dir, file_pattern), big_concat)
+        print(file_pattern, " mean: ", big_concat.mean(), " shape: ", big_concat.shape)
 
-    print(all_states.mean())
+    aggregate("inputs")
+    aggregate("policy_probs")
+    aggregate("masks")
+    aggregate("state_values")
 
-    all_mask_files = glob.glob(f"{source_dir}/**/masks*.npy", recursive=True)
-    all_masks = concat_np_files(sorted(all_mask_files))
-
-    all_probs_files = glob.glob(f"{source_dir}/**/qvalues*.npy", recursive=True)
-    all_probs = concat_np_files(sorted(all_probs_files))
-
-    print(all_states.shape)
-    print(all_masks.shape)
-    print(all_probs.shape)
-    np.save(os.path.join(target_dir, "inputs.npy"), all_states)
-    np.save(os.path.join(target_dir, "masks.npy"), all_masks)
-    np.save(os.path.join(target_dir, "qvalues.npy"), all_probs)
 
 if __name__ == "__main__":
     source_dir = sys.argv[1]

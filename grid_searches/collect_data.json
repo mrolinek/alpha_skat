@@ -1,9 +1,9 @@
 {
-  "optimization_procedure_name": "mcts_q_value_big",
+  "optimization_procedure_name": "value_policy_data",
   "__import__": "grid_searches/base_cpu.json",
   "fixed_params": {
-    "__import_promise__": "configs/tournaments/basic.yaml",
-    "num_games": 20
+    "__import_promise__": "configs/tournaments/data_generation.yaml",
+    "num_games": 3
   },
   "restarts": 1000,
   "samples": null,

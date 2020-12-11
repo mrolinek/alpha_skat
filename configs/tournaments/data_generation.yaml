@@ -1,25 +1,28 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 2
+num_games: 3
 save_games: false
+play_all_hand_rotations: false
 player_params:
   player_one:
     #name: HardcodedRamschPlayer
     name: MCTSPlayer
-    num_mcts_rollouts: 4000
+    num_mcts_rollouts: 8000
     guessed_hands: 10
-    exploration_weight: 2.0
+    exploration_weight: 60.0
+    policy_function_checkpoint: "" #/is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
+    softmax_temperature_for_saving: 0.1
   player_two:
     name: MCTSPlayer
-    num_mcts_rollouts: 4000
+    num_mcts_rollouts: 8000
     guessed_hands: 10
-    exploration_weight: 2.0
-    #name: RandomPlayer   #HardcodedPlayer
-    #name: NNPlayer
-    #checkpoint_path: tmp/lightning_logs/version_67/checkpoints/epoch=5.ckpt
+    exploration_weight: 60.0
+    policy_function_checkpoint: "" #/is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
+    softmax_temperature_for_saving: 0.1
   player_three:
-    #name: HardcodedPlayer
     name: MCTSPlayer
-    num_mcts_rollouts: 4000
+    num_mcts_rollouts: 8000
     guessed_hands: 10
-    exploration_weight: 2.0
+    exploration_weight: 60.0
+    policy_function_checkpoint: "" #/is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
+    softmax_temperature_for_saving: 0.1

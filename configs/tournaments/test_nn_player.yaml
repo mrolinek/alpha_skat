@@ -1,6 +1,6 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 21
+num_games: 3
 save_games: true
 play_all_hand_rotations: true
 player_params:
@@ -12,7 +12,8 @@ player_params:
     checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
   player_three:
     name: MCTSPlayer
-    num_mcts_rollouts: 4000
+    num_mcts_rollouts: 10000
     guessed_hands: 10
     exploration_weight: 20.0
-    policy_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
+    policy_function_checkpoint: "" #/is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
+    softmax_temperature_for_saving: 0.1
