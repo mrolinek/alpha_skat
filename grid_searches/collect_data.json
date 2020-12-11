@@ -1,11 +1,11 @@
 {
-  "optimization_procedure_name": "value_policy_data",
+  "optimization_procedure_name": "value_policy_data_big",
   "__import__": "grid_searches/base_cpu.json",
   "fixed_params": {
     "__import_promise__": "configs/tournaments/data_generation.yaml",
-    "num_games": 3
+    "num_games": 10
   },
-  "restarts": 1000,
+  "restarts": 3000,
   "samples": null,
   "hyperparam_list": [
   ]

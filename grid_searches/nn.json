@@ -1,7 +1,7 @@
 {
   "optimization_procedure_name": "nn_train",
   "__import__": "grid_searches/base_gpu.json",
-  "script_relative_path": "game.py",
+  "script_relative_path": "train_model.py",
   "fixed_params": {
     "__import_promise__": "configs/nn/first.yaml",
     "num_epochs": 15
