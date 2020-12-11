@@ -28,8 +28,7 @@ class MCTS(object):
             raise RuntimeError(f"No iterations performed {node}")
 
         def all_value_functions(n):
-            if self.N[n] == 0:
-                return float("-inf")  # avoid unseen moves
+            assert self.N[n] > 0
             return self.Q[n] / self.N[n]  # average reward
 
         res = [(child, all_value_functions(child)) for child in self.children[node]]
@@ -93,24 +92,20 @@ class MCTS(object):
         if len(self.children[node]) == 1:
             return list(self.children[node])[0]
         
-        log_N_vertex = math.log(self.N[node])
+        sqrt_parent_visits = math.sqrt(self.N[node])
         player = node.active_player
         avgs = {n: self.Q[n][player] / self.N[n] for n in self.children[node]}
-        min_avg, max_avg = min(avgs.values()), max(avgs.values())
-
-        normed_avgs = {n: (val - min_avg) / (max_avg - min_avg + 1e-5) for n, val in avgs.items()}
 
         if self.policy_model is not None:
             policy_probabilities = node.policy_estimate(self.policy_model)
         else:
-            policy_probabilities = [1.0/32] * 32
+            policy_probabilities = [1.0/len(self.children[node])] * 32
 
         def uct(n):
             "Upper confidence bound for trees"
-            policy_value = math.log(policy_probabilities[n.last_played_card]) / math.log(1+ self.N[n])
-            normalized_value_estimate = normed_avgs[n]
-            exploration_value = self.exploration_weight * math.sqrt(log_N_vertex / self.N[n])
-            return policy_value + normalized_value_estimate + exploration_value
+            policy_value = policy_probabilities[n.last_played_card]
+            exploration_value = self.exploration_weight * policy_value * sqrt_parent_visits / (self.N[n])
+            return avgs[n] + exploration_value
 
         return max(self.children[node], key=uct)
 

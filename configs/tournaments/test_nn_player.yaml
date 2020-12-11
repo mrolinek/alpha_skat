@@ -1,7 +1,7 @@
 game_name: simple_ramsch
 working_dir: "tmp"
 num_games: 21
-save_games: false
+save_games: true
 play_all_hand_rotations: true
 player_params:
   player_one:
@@ -14,5 +14,5 @@ player_params:
     name: MCTSPlayer
     num_mcts_rollouts: 4000
     guessed_hands: 10
-    exploration_weight: 1.0
+    exploration_weight: 20.0
     policy_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
