@@ -20,6 +20,7 @@ from pytorch_lightning import metrics
 
 import numpy as np
 
+from utils import input_to_tensors, output_to_numpy
 
 scaling_constant = 50.0
 
@@ -47,45 +48,57 @@ def get_arch(name, num_classes, **arch_params):
 
 class TrainSkatModel(pl.LightningModule):
 
-    def __init__(self, learning_rate, arch_params):
+    def __init__(self, learning_rate, arch_params, value_scaling_constant, scheduler_params):
 
         super().__init__()
+        self.scheduler_params = scheduler_params
+        self.value_scaling_constant = value_scaling_constant
         self.learning_rate = learning_rate
         self.save_hyperparameters()
 
         # Define PyTorch model
-        self.model = get_arch(**arch_params, num_classes=32)
+        self.backbone = get_arch(**arch_params, num_classes=512)
+        self.policy_head = nn.Sequential(nn.Linear(512, 200), nn.ReLU(), nn.Linear(200, 32))
+        self.value_head = nn.Sequential(nn.Linear(512, 200), nn.ReLU(), nn.Linear(200, 3))
         self.convolutional = 'transformer' not in arch_params.name.lower()
 
         self.eval_accuracy = 0.0
         self.eval_loss = 0.0
 
         self.status_rows = 2
+        self._metrics = dict(val_kl_loss=0.0, val_acc=0.0, val_mse_loss=0.0, train_loss=0.0)
 
     def forward(self, x):
         x = x - 0.02
         if self.convolutional:
             x = x[:, None, ...].repeat([1, 3, 1, 1])
-        x = self.model(x)
-        return x
+        x = self.backbone(x)
+        policy_logits = self.policy_head(x)
+        value = self.value_head(x)
+        return policy_logits, value
 
-    def value_loss(self, predicted_qs, masks, real_qs, squared=True):
-        action_nums = torch.sum(masks, dim=1, keepdim=True)
-        if squared:
-            loss_v = (((torch.sum(masks*predicted_qs, dim=1) - torch.sum(real_qs, dim=1)) / action_nums) ** 2).mean()
-        else:
-            loss_v = (torch.max(masks*predicted_qs, dim=1)[0] - torch.max(real_qs, dim=1)[0]).abs().mean()
-        return loss_v
+    @input_to_tensors
+    @output_to_numpy
+    def get_policy_value(self, x, cuda=False):
+        was_singleton = False
+        if x.ndim == 2:
+            was_singleton = True
+            x = x[None, ...]
 
-    def policy_loss(self, predicted_qs, masks, true_qs):
-        true_probs = torch.softmax(true_qs+1000*(masks-1), dim=1)*masks
+        if cuda:
+            self.cuda()
+            x = x.cuda()
 
-        loss = F.kl_div(torch.log_softmax(predicted_qs, dim=1), true_probs, reduction='batchmean')
-        return loss
+        self.eval()
+        with torch.no_grad():
+            policy, value = self(x)
+            value = value * self.value_scaling_constant
 
-    def prob_weighted_loss(self, predicted_qs, masks, true_qs):
-        true_probs = torch.softmax(true_qs+1000*(masks-1), dim=1)*masks
-        return (true_probs * (predicted_qs - true_qs) ** 2).sum(dim=1).mean()
+        if was_singleton:
+            policy = policy[0]
+            value = value[0]
+
+        return policy, value
     
     @staticmethod
     @lru_cache(maxsize=32)
@@ -110,54 +123,58 @@ class TrainSkatModel(pl.LightningModule):
         random_integer = random.randint(0, 23)
         return TrainSkatModel._permutation_for_i(random_integer)
 
-    def _apply_augmentation(self, inputs, masks, probs):
+    def _apply_augmentation(self, inputs, masks, probs, true_state_values):
         perm = np.array(self._get_random_permutation())
         inputs[:, self.status_rows:, :] = inputs[:, self.status_rows:, perm]
-        return inputs, masks[:, perm], probs[:, perm]
+        return inputs, masks[:, perm], probs[:, perm], true_state_values
 
     def training_step(self, batch, batch_idx):
-        inputs, masks, q_values = batch
-        inputs, masks, q_values = self._apply_augmentation(inputs, masks, q_values)
-        predicted_qs = self(inputs)
-        return self.prob_weighted_loss(predicted_qs, masks, q_values / scaling_constant)
-        #loss_kl = self.policy_loss(predicted_qs, masks, q_values / scaling_constant)
-        #loss_v = self.value_loss(predicted_qs, masks, q_values / scaling_constant)
-        #self.log('loss_v', loss_v, prog_bar=True)
-        #return loss_kl + 0.1*loss_v
+        #inputs, masks, true_policy_probs, true_state_values = batch
+        inputs, masks, true_policy_probs, true_state_values = self._apply_augmentation(*batch)
+
+        predicted_policy_logits, predicted_values = self(inputs)
+        policy_loss = F.kl_div(torch.log_softmax(predicted_policy_logits, dim=1), true_policy_probs,
+                               reduction='batchmean')
+        value_loss = ((predicted_values - true_state_values / self.value_scaling_constant) ** 2).mean()
+
+        self.log('loss_v', value_loss, prog_bar=True)
+        return policy_loss + value_loss
 
     def training_epoch_end(self, training_step_outputs):
         losses = [it['loss'] for it in training_step_outputs]
-        self.train_loss = sum(losses) / len(losses)
-        self.log('train_loss', self.train_loss, prog_bar=False)
+        self._metrics["train_loss"] = sum(losses) / len(losses)
+        self.log('train_loss', self._metrics["train_loss"], prog_bar=False)
 
 
     def validation_step(self, batch, batch_idx):
-        inputs, masks, true_qs = batch
+        inputs, masks, true_policy_probs, true_state_values = batch
 
-        predicted_qs = self(inputs)
-        loss = self.value_loss(predicted_qs * scaling_constant, masks, true_qs, squared=False)
-        pred_ys = torch.argmax(predicted_qs + 1000 * (masks-1), dim=1)
-        true_ys = torch.argmax(true_qs + 1000 * (masks-1), dim=1)
+        predicted_policy_logits, predicted_values = self(inputs)
+        policy_loss = F.kl_div(torch.log_softmax(predicted_policy_logits, dim=1), true_policy_probs, reduction='batchmean')
+        value_loss = (self.value_scaling_constant*predicted_values - true_state_values).abs().mean()
+
+        pred_ys = torch.argmax(predicted_policy_logits + 1000 * (masks-1), dim=1)
+        true_ys = torch.argmax(true_policy_probs + 1000 * (masks-1), dim=1)
         acc = accuracy(pred_ys, true_ys)
 
         # Calling self.log will surface up scalars for you in TensorBoard
-        return acc, loss
+        return acc, value_loss, policy_loss
 
     def validation_epoch_end(self, validation_step_outputs):
-        accs, losses = zip(*validation_step_outputs)
-        self.eval_loss = sum(losses) / len(losses)
-        self.eval_accuracy = sum(accs) / len(accs)
-        self.log('val_acc', self.eval_accuracy, prog_bar=True)
-        self.log('val_loss', self.eval_loss, prog_bar=True)
-
+        new_metrics = ["val_acc", "val_mse_loss", "val_kl_loss"]
+        metrics_to_update = dict(zip(new_metrics, zip(*validation_step_outputs)))
+        for key, value in metrics_to_update.items():
+            metrics_to_update[key] = sum(value) / len(value)
+            self.log(key, metrics_to_update[key], prog_bar=True)
+        self._metrics.update(metrics_to_update)
 
     @property
     def metrics(self):
-        return dict(eval_acc=self.eval_accuracy, eval_loss=self.eval_loss, train_loss=self.train_loss)
+        return self._metrics
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, **self.scheduler_params)
         return [optimizer], [scheduler]
 
 
@@ -173,8 +190,9 @@ class SkatDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         inputs = torch.Tensor(np.load(os.path.join(self.data_dir, "inputs.npy")))
         masks = torch.Tensor(np.load(os.path.join(self.data_dir, "masks.npy")))
-        q_values = torch.Tensor(np.load(os.path.join(self.data_dir, "qvalues.npy")))
-        full_dataset = TensorDataset(inputs, masks, q_values)
+        policy_probs = torch.Tensor(np.load(os.path.join(self.data_dir, "policy_probs.npy")))
+        state_values = torch.Tensor(np.load(os.path.join(self.data_dir, "state_values.npy")))
+        full_dataset = TensorDataset(inputs, masks, policy_probs, state_values)
         length = inputs.shape[0]
         train_size = int(0.9 * length)
         self.train_set, self.val_set = random_split(full_dataset, [train_size, length - train_size])

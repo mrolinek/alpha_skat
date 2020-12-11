@@ -15,7 +15,7 @@ def aggregate_all_data(source_dir, target_dir):
     def aggregate(file_pattern):
         all_files = glob.glob(f"{source_dir}/**/{file_pattern}*.npy", recursive=True)
         big_concat = concat_np_files(sorted(all_files))
-        np.save(os.path.join(target_dir, file_pattern), big_concat)
+        np.save(os.path.join(target_dir, file_pattern+'.npy'), big_concat)
         print(file_pattern, " mean: ", big_concat.mean(), " shape: ", big_concat.shape)
 
     aggregate("inputs")
