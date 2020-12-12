@@ -1,5 +1,5 @@
 working_dir: tmp
-num_epochs: 12
+num_epochs: 50
 data_params:
   #data_dir: '/is/rg/al/Data/alpha_skat/mcts_q_value'
   data_dir: /is/rg/al/Data/alpha_skat/policy_and_value_big
@@ -7,15 +7,14 @@ data_params:
 model_params:
   value_scaling_constant: 20.0
   optimizer_params:
-    name: SGD
-    lr: 0.1
-    weight_decay: 0.0001
+    name: AdamW
+    lr: 0.0005
+    weight_decay: 0.000001
   scheduler_params:
     gamma: 0.1
-    step_size: 10
-  learning_rate: 0.001
+    step_size: 40
   arch_params:
-    name: resnet9
+    name: resnet50
     #name: TransformerModel
     #input_dim: 32
     #seq_len: 36

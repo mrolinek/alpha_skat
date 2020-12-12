@@ -54,16 +54,14 @@ def get_optimizer(parameters, name, **optimizer_params):
     return opt_dict[name](parameters, **optimizer_params)
 
 
-
 class TrainSkatModel(pl.LightningModule):
 
-    def __init__(self, learning_rate, arch_params, value_scaling_constant, scheduler_params, optimizer_params):
+    def __init__(self, arch_params, value_scaling_constant, scheduler_params, optimizer_params):
 
         super().__init__()
         self.optimizer_params = optimizer_params
         self.scheduler_params = scheduler_params
         self.value_scaling_constant = value_scaling_constant
-        self.learning_rate = learning_rate
         self.save_hyperparameters()
 
         # Define PyTorch model
