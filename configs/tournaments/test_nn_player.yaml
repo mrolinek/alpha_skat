@@ -6,13 +6,13 @@ play_all_hand_rotations: true
 player_params:
   player_one:
     name: NNPlayer
-    checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
+    checkpoint_path: tmp/lightning_logs/version_3/checkpoints/epoch=199.ckpt
   player_two:
     name: NNPlayer
-    checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
+    checkpoint_path: tmp/lightning_logs/version_3/checkpoints/epoch=199.ckpt
   player_three:
     name: MCTSPlayer
-    num_mcts_rollouts: 10000
+    num_mcts_rollouts: 1000
     guessed_hands: 10
     exploration_weight: 20.0
     policy_function_checkpoint: "" #/is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt

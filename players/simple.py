@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import random
 import torch
+import numpy as np
 
 from train_model import TrainSkatModel
 from utils import np_one_hot
@@ -23,20 +24,19 @@ class RandomPlayer(Player):
         return random.choice(available_actions)
 
 
+
 class NNPlayer(Player):
     def __init__(self, checkpoint_path):
         super().__init__()
         self.model = TrainSkatModel.load_from_checkpoint(checkpoint_path)
+
         self.model.eval()
 
     def play(self, state, available_actions, ruleset):
         action_mask = np_one_hot(available_actions, dim=32)
+        policy, value = self.model.get_policy_and_value(state.state_for_nn)
 
-        nn_state = state.state_for_nn[None, ...]
-        nn_state = torch.Tensor(nn_state)
-        with torch.no_grad():
-            q_values = self.model(nn_state)[0].data + 1000 * (action_mask -1)
-        action = int(torch.argmax(q_values, dim=-1).item())
+        action = int(np.argmax(policy * action_mask, axis=-1))
         assert action in available_actions
         return action
 

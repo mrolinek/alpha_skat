@@ -1,20 +1,17 @@
 {
-  "optimization_procedure_name": "nn_train_adam",
+  "optimization_procedure_name": "nn_train_sgd",
   "__import__": "grid_searches/base_gpu.json",
   "script_relative_path": "train_model.py",
   "fixed_params": {
     "__import_promise__": "configs/nn/first.yaml",
+    "model_params.optimizer_params.name": "SGD"
   },
   "restarts": 1,
   "samples": null,
   "hyperparam_list": [
     {
       "param": "model_params.optimizer_params.lr",
-      "values": [2e-4, 5e-4, 1e-3, 2e-3, 4e-3]
-    },
-    {
-      "param": "model_params.optimizer_params.name",
-      "values": ["Adam", "AdamW"]
+      "values": [0.01, 0.03, 0.1, 0.3, 1.0]
     },
     {
       "param": "model_params.optimizer_params.weight_decay",

@@ -46,11 +46,21 @@ def get_arch(name, num_classes, **arch_params):
         return arch_dict[name](num_classes=num_classes, **arch_params)
 
 
+def get_optimizer(parameters, name, **optimizer_params):
+    opt_dict = dict(Adam=torch.optim.Adam,
+                    AdamW=torch.optim.AdamW,
+                    SGD=torch.optim.SGD,
+                    RMSProp=torch.optim.RMSprop)
+    return opt_dict[name](parameters, **optimizer_params)
+
+
+
 class TrainSkatModel(pl.LightningModule):
 
-    def __init__(self, learning_rate, arch_params, value_scaling_constant, scheduler_params):
+    def __init__(self, learning_rate, arch_params, value_scaling_constant, scheduler_params, optimizer_params):
 
         super().__init__()
+        self.optimizer_params = optimizer_params
         self.scheduler_params = scheduler_params
         self.value_scaling_constant = value_scaling_constant
         self.learning_rate = learning_rate
@@ -79,7 +89,7 @@ class TrainSkatModel(pl.LightningModule):
 
     @input_to_tensors
     @output_to_numpy
-    def get_policy_value(self, x, cuda=False):
+    def get_policy_and_value(self, x, cuda=False):
         was_singleton = False
         if x.ndim == 2:
             was_singleton = True
@@ -173,7 +183,7 @@ class TrainSkatModel(pl.LightningModule):
         return self._metrics
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        optimizer = get_optimizer(self.parameters(), **self.optimizer_params)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, **self.scheduler_params)
         return [optimizer], [scheduler]
 
