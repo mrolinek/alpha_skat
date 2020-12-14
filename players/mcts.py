@@ -4,7 +4,7 @@ from collections import defaultdict
 from algorithms.mcts_basic import MCTS, CardGameNode
 from algorithms.mcts_parallel_value import MCTS_parallel
 from players.simple import Player
-from sat_solver import solve_sat_for_init_hands
+from sat_solver import solve_sat_for_init_hands, top_k_likely_hands
 from train_model import TrainSkatModel
 from utils import np_one_hot, softmax
 
@@ -13,9 +13,13 @@ import numpy as np
 
 class MCTSPlayer(Player):
     def __init__(self, num_mcts_rollouts, exploration_weight, guessed_hands, softmax_temperature_for_saving,
+                 use_policy_for_init_hands,
+                 use_policy_for_ucb,
                  value_function_checkpoint=None,
                  policy_function_checkpoint=None):
         super().__init__()
+        self.use_policy_for_ucb = use_policy_for_ucb
+        self.use_policy_for_init_hands = use_policy_for_init_hands
         self.guessed_hands = guessed_hands
         self.exploration_weight = exploration_weight
         self.num_mcts_rollouts = num_mcts_rollouts
@@ -55,34 +59,37 @@ class MCTSPlayer(Player):
 
     def play(self, state, available_actions, ruleset):
 
-        init_hands = solve_sat_for_init_hands(state.implications, self.guessed_hands)
+        if self.use_policy_for_init_hands:
+            assert self.policy_model is not None
+            init_hands, init_hand_probs = top_k_likely_hands(ruleset, state, self.guessed_hands, self.policy_model)
+        else:
+            init_hands, init_hand_probs = solve_sat_for_init_hands(state.implications, self.guessed_hands)
         init_full_states = [state.full_state_from_partial_and_initial_hands(state, init_hand)
                             for init_hand in init_hands]
 
-        def values_for_starting_state(init_full_state, iterations, scores):
+        def values_for_starting_state(init_full_state, iterations, scores, init_state_prob):
             starting_node = CardGameNode(ruleset, init_full_state)
             if self.value_model:
-                mcts_runner = MCTS_parallel(self.exploration_weight, self.value_model)
-                for i in range(3):
+                mcts_runner = MCTS_parallel(value_function_model=self.value_model,
+                                            exploration_weight=self.exploration_weight,
+                                            policy_model=self.policy_model)
+                for i in range(5):
                     mcts_runner.do_rollouts(starting_node, 300)
             else:
-                mcts_runner = MCTS(self.exploration_weight, self.policy_model)
+                mcts_runner = MCTS(self.exploration_weight, self.policy_model if self.use_policy_for_ucb else None)
                 for i in range(iterations):
                     mcts_runner.do_rollout(starting_node)
 
             learned_values = mcts_runner.choose(starting_node)
             for child, val in learned_values:
-                scores[child.last_played_card] += val
+                scores[child.last_played_card] += val * init_state_prob
 
         iteration_per_sol = self.num_mcts_rollouts // len(init_full_states)
         scores = defaultdict(int)
-        for init_state in init_full_states:
-            values_for_starting_state(init_state, iteration_per_sol, scores)
+        for init_state, init_state_prob in zip(init_full_states, init_hand_probs):
+            values_for_starting_state(init_state, iteration_per_sol, scores, init_state_prob)
 
-        for action, value in scores.items():
-            scores[action] = scores[action] / len(init_full_states)
-
-        print(scores)
+        print(sorted(scores.items()))
         print('-----------------------------------------------------------------')
         player = int(state.active_player)
         active_player_scores = {action: score[player] for action, score in scores.items()}

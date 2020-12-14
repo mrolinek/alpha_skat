@@ -151,7 +151,6 @@ class MultiplayerMCTSNode(ABC):
         "Nodes must be comparable"
         return True
 
-scaling_constant = 50.0
 
 class CardGameNode(MultiplayerMCTSNode):
     def __init__(self, ruleset, current_state):
@@ -192,13 +191,9 @@ class CardGameNode(MultiplayerMCTSNode):
     def value_function_estimate(self, model):
         if self._value is not None:
             return self._value
-        with torch.no_grad():
-            nn_state = self.current_state.state_for_player(self.active_player).state_for_nn
-            nn_state = torch.Tensor(nn_state[None, ...])
-            q_values = model(nn_state)[0].numpy()
-            one_hot_actions = np_one_hot(self.actions, dim=32)
-            self._value = scaling_constant * (q_values + 1000 * (one_hot_actions - 1)).max()
-            return self._value
+        nn_state = self.current_state.state_for_player(self.active_player).state_for_nn
+        self._value = model.get_policy_and_value(nn_state)
+        return self._value
 
     def policy_estimate(self, model):
         if self._policy_probabilities is not None:

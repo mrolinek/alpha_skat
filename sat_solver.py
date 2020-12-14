@@ -3,10 +3,15 @@ from itertools import islice
 from pysat.solvers import Minicard
 import numpy as np
 
+from numba import njit, int16
+
+from utils import np_one_hot, softmax
+
 
 def add_equal(solver, literals, k):
     solver.add_atmost(literals, k=k)
     solver.add_atmost([-l for l in literals], k=len(literals) - k)
+
 
 def add_basic_clauses(solver):
     for i in range(1, 33):
@@ -18,6 +23,11 @@ def add_basic_clauses(solver):
     add_equal(solver, list(range(97, 129)), k=2)
 
 
+#@njit(int16[:,:](int16[:]))
+def sol_to_numpy(sol):
+    np_sol = np.zeros(shape=32 * 4, dtype=np.int16)
+    np_sol[[i - 1 for i in sol if i > 0]] = 1
+    return np_sol.reshape(4, 32)
 
 
 def solve_sat_for_init_hands(public_state_array, num_solutions):
@@ -32,15 +42,68 @@ def solve_sat_for_init_hands(public_state_array, num_solutions):
     negative_literals = [int(-(1 + 32 * i + j)) for (i, j) in negatives]
 
     solutions = solver.enum_models(assumptions=positive_literals+negative_literals)
-    sols = list(islice(solutions, 1000))  # High number to ensure sufficient randomness
+    sols = list(islice(solutions, 2000))  # High number to ensure sufficient randomness
 
     if len(sols) > num_solutions:
         sols = random.sample(sols, num_solutions)
 
-    def sol_to_numpy(sol):
-        np_sol = np.zeros(shape=32 * 4, dtype=np.int16)
-        np_sol[[i - 1 for i in sol if i > 0]] = 1
-        return np_sol.reshape(4, 32)
+    result = [sol_to_numpy(np.array(sol, np.int16)) for sol in sols]
+    return result, [1.0 / len(result)] * len(result)
 
-    result = [sol_to_numpy(sol) for sol in sols]
-    return result
+
+def top_k_likely_hands(ruleset, current_state, k, policy_model, init_hands_to_sample=500):
+    top_candidates, _ = solve_sat_for_init_hands(current_state, init_hands_to_sample)
+    assert top_candidates
+
+    result = [current_state.recover_init_state_and_actions(initial_hands) for initial_hands in top_candidates]
+    init_states, action_sequences = zip(*result)
+
+    all_states, all_actions, all_masks = [], [], []
+
+    actions_per_init_state = None
+    for init_state, action_sequence in zip(init_states, action_sequences):
+        added_states = 0
+        state = init_state
+        for action in action_sequence:
+            available_actions = ruleset.available_actions(state)
+            assert action in available_actions
+            if state.active_player != current_state.active_player:
+                all_states.append(state)
+                all_actions.append(action)
+                all_masks.append(available_actions)
+                added_states += 1
+            state = ruleset.do_action(state)
+
+        actions_per_init_state = actions_per_init_state or added_states
+        assert actions_per_init_state == added_states  # Every init hand has equal number of actions to evaluate
+        actions_per_init_state = added_states
+
+    if not all_states:
+        if len(all_states) > k:
+            init_states = random.sample(init_states, k)
+        return init_states, [1.0 / len(init_states)] * len(init_states)
+
+    # Run NN
+    nn_states = [state.state_for_player(state.active_player).state_for_nn[None, ...] for state in all_states]
+    nn_states = np.concatenate(nn_states, axis=0)
+    all_masks_numpy = np.concatenate([np_one_hot(mask, 32)[None, ...] for mask in all_masks], axis=0)
+    policy_logits, value = policy_model.get_policy_and_value(nn_states)
+    assert policy_logits.shape == all_masks_numpy.shape
+
+    # Collect probabilities of init_hands
+    policy_probabilities = softmax(policy_logits + 1000*(all_masks_numpy - 1))
+    log_probabilities = np.log(policy_probabilities + 1e-3)
+    log_probs_of_taken_actions = log_probabilities[np.array(all_actions)]
+    log_probs_by_init_state = log_probs_of_taken_actions.reshape((init_hands_to_sample, actions_per_init_state))
+    log_probs_by_init_state = np.sum(log_probs_by_init_state, axis=1)
+
+    # Compute and return top_k
+    top_k_init_state_indices = np.argsort(log_probs_by_init_state)[:k]
+    top_k_init_hands = [init_states[i] for i in top_k_init_state_indices]
+    top_k_hands_probabilities = softmax(np.array([log_probs_by_init_state[i] for i in top_k_init_state_indices]))
+    return top_k_init_hands, top_k_hands_probabilities
+
+
+
+
+

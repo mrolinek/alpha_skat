@@ -68,6 +68,9 @@ def main(player_params, num_games, game_name, working_dir, save_games, play_all_
         new_game = Game(game_name, last_state, play_all_hand_rotations, players)
         last_state = new_game.play()
         total_scores += last_state.current_scores - last_state.current_scores.mean()
+        print("###########################################################")
+        print("Scores: ", total_scores[0], total_scores[1], total_scores[2])
+        print("###########################################################")
         if save_games:
             new_game.save(os.path.join(working_dir, f"game_{i+1}.gm"))
 

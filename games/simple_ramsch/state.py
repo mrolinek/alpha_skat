@@ -61,6 +61,12 @@ class RamschState(GameState):
         full_state.all_hands = initial_hands * still_in_play[None, :]
         return full_state
 
+    def recover_init_state_and_actions(self, initial_hands):
+        new_state = RamschState.from_initial_hands(initial_hands, one_hot_to_int(self.dealer))
+        actions = self.played_cards_as_ints
+        return new_state, actions
+
+
     def add_private_implications(self, player_id):
         active_row = self.status_rows + self.hand_rows + self.gameplay_rows + self.active_player
         for card in self.hands_as_ints[player_id]:
@@ -127,10 +133,6 @@ class RamschState(GameState):
     @property
     def current_trick(self):
         return extract_tricks(self.full_state, self.status_rows + self.hand_rows, self.num_played_cards)
-        #finished_tricks = max(0, (self.num_played_cards-1) // 3)
-        #first_row = self.status_rows + self.hand_rows + 3*finished_tricks
-        #num_cards_in_trick = self.num_played_cards - 3*finished_tricks
-        #return self.full_state[first_row:first_row+num_cards_in_trick]
 
     def check_sound(self):
         card_row_start = self.status_rows

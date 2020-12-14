@@ -36,8 +36,8 @@ class NNPlayer(Player):
         action_mask = np_one_hot(available_actions, dim=32)
         policy, value = self.model.get_policy_and_value(state.state_for_nn)
 
-        action = int(np.argmax(policy * action_mask, axis=-1))
-        assert action in available_actions
+        action = int(np.argmax(policy + 1000*(action_mask-1), axis=-1))
+        assert action in available_actions, (policy, action_mask)
         return action
 
 
