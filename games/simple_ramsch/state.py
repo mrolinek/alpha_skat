@@ -23,7 +23,7 @@ class RamschState(GameState):
     dealer = ArraySlice(slice_in_array=(0, slice(0, 3)))
     current_scores = ArraySlice(slice_in_array=(0, slice(3, 6)))
     num_played_cards = ArraySlice(slice_in_array=(-1, 0))
-    player_id_sequence = ArraySlice(slice_in_array=-2)
+    player_id_sequence = ArraySlice(slice_in_array=1)
     active_player = ArraySlice(slice_in_array=(0, 6))
     all_hands = ArraySlice(slice_in_array=slice(status_rows, status_rows + hand_rows))
     skat = ArraySlice(slice_in_array=status_rows + hand_rows-1)
@@ -53,9 +53,11 @@ class RamschState(GameState):
 
     @property
     def state_for_nn(self):
-        new_state = RamschState(self.full_state.copy())
+        new_state = RamschState(self.full_state.copy(), dtype=np.float32)
         new_state.current_scores = new_state.current_scores / 30.0
-        return new_state.full_state[:-self.redundant_rows]
+        new_state.player_id_sequence = (new_state.player_id_sequence - 1.0) / 10.0
+        result = new_state.full_state[:-self.redundant_rows]
+        return result
 
     @staticmethod
     def full_state_from_partial_and_initial_hands(partial_state, initial_hands):

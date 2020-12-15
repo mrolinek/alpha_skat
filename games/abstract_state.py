@@ -21,7 +21,7 @@ class GameState(ABC):
     implication_rows = None
     columns = 32
 
-    def __init__(self, full_state=None):
+    def __init__(self, full_state=None, dtype=np.int16):
         self.total_rows = (self.status_rows+
                            self.hand_rows+
                            self.gameplay_rows+
@@ -31,9 +31,9 @@ class GameState(ABC):
             if not full_state.shape == (self.total_rows, self.columns):
                 raise TypeError(f"State for game {self.name} must have shape"
                                 f"{(self.total_rows, self.columns)}, not {self.columns}")
-            self.full_state = full_state
+            self.full_state = np.array(full_state, dtype=dtype)
         else:
-            self.full_state = np.zeros(shape=(self.total_rows, self.columns), dtype=np.int16)
+            self.full_state = np.zeros(shape=(self.total_rows, self.columns), dtype=dtype)
 
     @classmethod
     @abstractmethod
