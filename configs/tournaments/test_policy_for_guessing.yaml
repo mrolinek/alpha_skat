@@ -6,10 +6,10 @@ play_all_hand_rotations: true
 player_params:
   player_one:
     name: NNPlayer
-    checkpoint_path: tmp/lightning_logs/version_11/checkpoints/epoch=49.ckpt
+    checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_resnet_50.ckpt
   player_two:
     name: NNPlayer
-    checkpoint_path: tmp/lightning_logs/version_11/checkpoints/epoch=49.ckpt
+    checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_resnet_50.ckpt
     #name: MCTSPlayer
     #num_mcts_rollouts: 2000
     #guessed_hands: 5
