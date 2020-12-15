@@ -15,9 +15,13 @@ class MCTSPlayer(Player):
     def __init__(self, num_mcts_rollouts, exploration_weight, guessed_hands, softmax_temperature_for_saving,
                  use_policy_for_init_hands,
                  use_policy_for_ucb,
+                 init_hands_to_sample,
+                 epsilon,
                  value_function_checkpoint=None,
                  policy_function_checkpoint=None):
         super().__init__()
+        self.epsilon = epsilon
+        self.init_hands_to_sample = init_hands_to_sample
         self.use_policy_for_ucb = use_policy_for_ucb
         self.use_policy_for_init_hands = use_policy_for_init_hands
         self.guessed_hands = guessed_hands
@@ -61,20 +65,22 @@ class MCTSPlayer(Player):
 
         if self.use_policy_for_init_hands:
             assert self.policy_model is not None
-            init_hands, init_hand_probs = top_k_likely_hands(ruleset, state, self.guessed_hands, self.policy_model)
+            init_hands = top_k_likely_hands(ruleset, state, self.guessed_hands, self.policy_model,
+                                            epsilon=self.epsilon,
+                                            init_hands_to_sample=self.init_hands_to_sample)
         else:
-            init_hands, init_hand_probs = solve_sat_for_init_hands(state.implications, self.guessed_hands)
+            init_hands = solve_sat_for_init_hands(state.implications, self.guessed_hands)
         init_full_states = [state.full_state_from_partial_and_initial_hands(state, init_hand)
                             for init_hand in init_hands]
 
-        def values_for_starting_state(init_full_state, iterations, scores, init_state_prob):
+        def values_for_starting_state(init_full_state, iterations, scores):
             starting_node = CardGameNode(ruleset, init_full_state)
             if self.value_model:
                 mcts_runner = MCTS_parallel(value_function_model=self.value_model,
                                             exploration_weight=self.exploration_weight,
                                             policy_model=self.policy_model)
-                for i in range(5):
-                    mcts_runner.do_rollouts(starting_node, 300)
+                for i in range(4):
+                    mcts_runner.do_rollouts(starting_node, iterations // 4)
             else:
                 mcts_runner = MCTS(self.exploration_weight, self.policy_model if self.use_policy_for_ucb else None)
                 for i in range(iterations):
@@ -82,12 +88,12 @@ class MCTSPlayer(Player):
 
             learned_values = mcts_runner.choose(starting_node)
             for child, val in learned_values:
-                scores[child.last_played_card] += val * init_state_prob
+                scores[child.last_played_card] += val / len(init_full_states)  # normalize
 
         iteration_per_sol = self.num_mcts_rollouts // len(init_full_states)
         scores = defaultdict(int)
-        for init_state, init_state_prob in zip(init_full_states, init_hand_probs):
-            values_for_starting_state(init_state, iteration_per_sol, scores, init_state_prob)
+        for init_state in init_full_states:
+            values_for_starting_state(init_state, iteration_per_sol, scores)
 
         print(sorted(scores.items()))
         print('-----------------------------------------------------------------')

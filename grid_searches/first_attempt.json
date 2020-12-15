@@ -1,23 +1,23 @@
 {
-  "optimization_procedure_name": "MCTS_params_proper_uct",
+  "optimization_procedure_name": "hand_guessing_params",
   "__import__": "grid_searches/base_cpu.json",
   "fixed_params": {
     "__import_promise__": "configs/tournaments/test_nn_player.yaml"
   },
-  "restarts": 20,
+  "restarts": 50,
   "samples": null,
   "hyperparam_list": [
     {
-      "param": "player_params.player_three.num_mcts_rollouts",
-      "values": [2000, 3000, 4000]
+      "param": "player_params.player_three.guessed_hands",
+      "values": [5, 10]
     },
     {
-      "param": "player_params.player_three.exploration_weight",
-      "values": [5.0, 10.0, 20.0, 40.0, 80.0]
+      "param": "player_params.player_three.epsilon",
+      "values": [1e-4, 1e-5]
     },
     {
-      "param": "player_params.player_three.policy_function_checkpoint",
-      "values": ["", "/is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt"]
+      "param": "player_params.player_three.init_hands_to_sample",
+      "values": [200, 400]
     }
   ]
 }

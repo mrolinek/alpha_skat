@@ -32,10 +32,13 @@ class RamschState(GameState):
     played_cards = ArraySlice(slice_in_array=slice(status_rows + hand_rows, status_rows + hand_rows+gameplay_rows))
 
     @classmethod
-    def from_initial_hands(cls, initial_hands, dealer):
+    def from_initial_hands(cls, initial_hands, dealer, hands_as_ints=True):
         instance = cls(full_state=None)
-        np_hands = [np_one_hot(hand, 32)[None, :] for hand in initial_hands]
-        instance.all_hands = np.concatenate(np_hands, axis=0)
+        if hands_as_ints:
+            np_hands = [np_one_hot(hand, 32)[None, :] for hand in initial_hands]
+            instance.all_hands = np.concatenate(np_hands, axis=0)
+        else:
+            instance.all_hands = initial_hands
         instance.dealer = np_one_hot(dealer, 3)
         instance.active_player = (dealer + 1) % 3
         return instance
@@ -61,11 +64,13 @@ class RamschState(GameState):
         full_state.all_hands = initial_hands * still_in_play[None, :]
         return full_state
 
-    def recover_init_state_and_actions(self, initial_hands):
-        new_state = RamschState.from_initial_hands(initial_hands, one_hot_to_int(self.dealer))
-        actions = self.played_cards_as_ints
-        return new_state, actions
+    def recover_init_state(self, initial_hands):
+        new_state = RamschState.from_initial_hands(initial_hands, one_hot_to_int(self.dealer), hands_as_ints=False)
+        return new_state
 
+    @property
+    def actions_taken(self):
+        return self.played_cards_as_ints
 
     def add_private_implications(self, player_id):
         active_row = self.status_rows + self.hand_rows + self.gameplay_rows + self.active_player
@@ -80,7 +85,6 @@ class RamschState(GameState):
     @property
     def skat_as_ints(self):
         return one_hot_to_int(self.skat)
-
 
     @property
     def current_trick_as_ints(self):

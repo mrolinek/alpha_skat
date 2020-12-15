@@ -1,6 +1,6 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 3
+num_games: 20
 save_games: true
 play_all_hand_rotations: true
 player_params:
@@ -8,22 +8,26 @@ player_params:
     name: NNPlayer
     checkpoint_path: tmp/lightning_logs/version_11/checkpoints/epoch=49.ckpt
   player_two:
-    name: MCTSPlayer
-    num_mcts_rollouts: 1000
-    guessed_hands: 10
-    exploration_weight: 60.0
-    value_function_checkpoint: ""
-    policy_function_checkpoint: ""
-    softmax_temperature_for_saving: 0.1
-    use_policy_for_init_hands: false
-    use_policy_for_ucb: false
+    name: NNPlayer
+    checkpoint_path: tmp/lightning_logs/version_11/checkpoints/epoch=49.ckpt
+    #name: MCTSPlayer
+    #num_mcts_rollouts: 2000
+    #guessed_hands: 5
+    #exploration_weight: 60.0
+    #value_function_checkpoint: ""
+    #policy_function_checkpoint: ""
+    #softmax_temperature_for_saving: 0.1
+    #use_policy_for_init_hands: false
+    #use_policy_for_ucb: false
   player_three:
     name: MCTSPlayer
-    num_mcts_rollouts: 1000
-    guessed_hands: 10
+    num_mcts_rollouts: 4000
+    guessed_hands: 5
     exploration_weight: 60.0
     value_function_checkpoint: ""
     policy_function_checkpoint: tmp/lightning_logs/version_11/checkpoints/epoch=49.ckpt
     softmax_temperature_for_saving: 0.1
     use_policy_for_init_hands: true
     use_policy_for_ucb: false
+    epsilon: 0.0001
+    init_hands_to_sample: 200
