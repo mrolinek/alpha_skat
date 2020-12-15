@@ -77,7 +77,7 @@ class MCTSPlayer(Player):
             if self.value_model:
                 mcts_runner = MCTS_parallel(value_function_model=self.value_model,
                                             exploration_weight=self.exploration_weight,
-                                            policy_model=self.policy_model)
+                                            policy_model=self.policy_model if self.use_policy_for_ucb else None)
                 for i in range(4):
                     mcts_runner.do_rollouts(starting_node, iterations // 4)
             else:
