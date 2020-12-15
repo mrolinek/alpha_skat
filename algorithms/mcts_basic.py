@@ -1,5 +1,4 @@
 import random
-import torch
 from abc import ABC, abstractmethod
 from collections import defaultdict
 import math
@@ -198,13 +197,11 @@ class CardGameNode(MultiplayerMCTSNode):
     def policy_estimate(self, model):
         if self._policy_probabilities is not None:
             return self._policy_probabilities
-        with torch.no_grad():
-            nn_state = self.current_state.state_for_player(self.active_player).state_for_nn
-            nn_state = torch.Tensor(nn_state[None, ...])
-            q_values = model(nn_state)[0].numpy()
-            one_hot_actions = np_one_hot(self.actions, dim=32)
-            self._policy_probabilities = softmax(q_values + 1000 * (one_hot_actions - 1)) * one_hot_actions
-            return self._policy_probabilities
+        nn_state = self.current_state.state_for_player(self.active_player).state_for_nn
+        logits, value_ = model.get_policy_and_value(nn_state)
+        one_hot_actions = np_one_hot(self.actions, dim=32)
+        self._policy_probabilities = softmax(logits + 1000 * (one_hot_actions - 1)) * one_hot_actions
+        return self._policy_probabilities
 
     def rewards(self):
         rewards = self.ruleset.final_rewards(self.current_state)
