@@ -2,7 +2,7 @@
   "optimization_procedure_name": "hand_guessing_params",
   "__import__": "grid_searches/base_cpu.json",
   "fixed_params": {
-    "__import_promise__": "configs/tournaments/test_nn_player.yaml"
+    "__import_promise__": "configs/tournaments/test_policy_for_guessing.yaml"
   },
   "restarts": 50,
   "samples": null,
