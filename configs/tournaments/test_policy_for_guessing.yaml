@@ -25,7 +25,7 @@ player_params:
     guessed_hands: 5
     exploration_weight: 60.0
     value_function_checkpoint: ""
-    policy_function_checkpoint: tmp/lightning_logs/version_11/checkpoints/epoch=49.ckpt
+    policy_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_resnet_50.ckpt
     softmax_temperature_for_saving: 0.1
     use_policy_for_init_hands: true
     use_policy_for_ucb: false
