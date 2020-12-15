@@ -30,7 +30,6 @@ class MCTSPlayer(Player):
         self.softmax_temperature_for_saving = softmax_temperature_for_saving
         if value_function_checkpoint:
             self.value_model = TrainSkatModel.load_from_checkpoint(value_function_checkpoint)
-            self.value_model.cuda()
         else:
             self.value_model = None
 
