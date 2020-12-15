@@ -108,9 +108,9 @@ def top_k_likely_hands(ruleset, current_state, k, policy_model, init_hands_to_sa
     # Compute and return top_k
     #top_k_init_state_indices = np.argsort(-log_probs_by_init_state)[:k]
     #top_k_init_hands = [top_candidates[i] for i in top_k_init_state_indices]
-    print("Guessed hands:")
-    for hand in sampled_hands:
-        print(hand)
+    #print("Guessed hands:")
+    #for hand in sampled_hands:
+    #    print(hand)
     return sampled_hands
 
 

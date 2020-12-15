@@ -87,15 +87,17 @@ class TrainSkatModel(pl.LightningModule):
 
     @input_to_tensors
     @output_to_numpy
-    def get_policy_and_value(self, x, cuda=False):
+    def get_policy_and_value(self, x):
         was_singleton = False
         if x.ndim == 2:
             was_singleton = True
             x = x[None, ...]
 
-        if cuda:
+        if torch.cuda.is_available() and x.shape[0] > 20:
             self.cuda()
             x = x.cuda()
+        else:
+            self.to('cpu')
 
         self.eval()
         with torch.no_grad():

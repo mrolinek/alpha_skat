@@ -53,6 +53,6 @@ def evaluate_batch_of_nodes(list_of_nodes, model):
     nn_states = [node.current_state.state_for_player(node.active_player).state_for_nn[None, ...]
                  for node in list_of_nodes]
     nn_states = np.concatenate(nn_states, axis=0)
-    policy, value = model.get_policy_and_value(nn_states, cuda=True)
+    policy, value = model.get_policy_and_value(nn_states)
     return value
 

@@ -1,23 +1,19 @@
 {
-  "optimization_procedure_name": "hand_guessing_params",
+  "optimization_procedure_name": "hand_guessing_params2",
   "__import__": "grid_searches/base_cpu.json",
   "fixed_params": {
     "__import_promise__": "configs/tournaments/test_policy_for_guessing.yaml"
   },
-  "restarts": 50,
+  "restarts": 300,
   "samples": null,
   "hyperparam_list": [
     {
-      "param": "player_params.player_three.guessed_hands",
-      "values": [5, 10]
-    },
-    {
       "param": "player_params.player_three.epsilon",
-      "values": [1e-4, 1e-5]
+      "values": [1e-2, 1e-3, 1e-4]
     },
     {
-      "param": "player_params.player_three.init_hands_to_sample",
-      "values": [200, 400]
+      "param": "player_params.player_three.value_function_checkpoint",
+      "values": ["", "/is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_resnet_50.ckpt"]
     }
   ]
 }
