@@ -1,0 +1,29 @@
+working_dir: tmp
+num_epochs: 50
+mode: value
+data_params:
+  #data_dir: '/is/rg/al/Data/alpha_skat/mcts_q_value'
+  data_dir: /is/rg/al/Data/alpha_skat/policy_and_value_big
+  batch_size: 128
+model_params:
+  game: ramsch
+  optimizer_params:
+    name: AdamW
+    lr: 0.0005
+    weight_decay: 0.000001
+  scheduler_params:
+    gamma: 0.1
+    step_size: 40
+  arch_params:
+    name: resnet9
+    #name: TransformerModel
+    #input_dim: 32
+    #seq_len: 36
+    #num_heads: 2
+    #dim_feedforward: 2048
+    #num_layers: 1
+    #dropout: 0.0
+    #resnet_params:
+    #  layers: [1, 1, 1, 1]
+    #  groups: 1
+    #  width_per_group: 64
