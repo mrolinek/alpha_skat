@@ -1,17 +1,13 @@
 {
-  "optimization_procedure_name": "nn_train_all",
+  "optimization_procedure_name": "nn_train_value",
   "__import__": "grid_searches/base_gpu.json",
   "script_relative_path": "train_model.py",
   "fixed_params": {
-    "__import_promise__": "configs/nn/first.yaml"
+    "__import_promise__": "configs/nn/value.yaml"
   },
   "restarts": 1,
   "samples": null,
   "hyperparam_list": [
-    {
-      "param": "model_params.arch_params.name",
-      "values": ["resnet9", "resnet18", "resnet50", "resnext50_32x4d"]
-    },
     {
       "param": "num_epochs",
       "values": [10, 20, 40]
