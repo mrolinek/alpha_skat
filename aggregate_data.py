@@ -21,7 +21,8 @@ def aggregate_all_data(source_dir, target_dir):
     aggregate("inputs")
     aggregate("policy_probs")
     aggregate("masks")
-    aggregate("state_values")
+    aggregate("full_states")
+    aggregate("full_state_values")
 
 
 if __name__ == "__main__":

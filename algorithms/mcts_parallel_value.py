@@ -13,10 +13,10 @@ class MCTS_parallel(MCTS):
         super().__init__(**kwargs)
         self.model = value_function_model
 
-    def do_rollouts(self, node, how_many):
+    def do_rollouts(self, how_many):
         paths = []
         for i in range(how_many):
-            path = self._select(node)
+            path = self._select(self.root_node)
             leaf = path[-1]
             self._expand(leaf)
             if leaf.is_terminal():

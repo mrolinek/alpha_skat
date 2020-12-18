@@ -17,6 +17,7 @@ player_params:
     use_policy_for_ucb: false
     epsilon: 0.0001
     init_hands_to_sample: 400
+    policy_ucb_coef: 0.0
   player_two:
     name: MCTSPlayer
     num_mcts_rollouts: 16000
@@ -29,6 +30,7 @@ player_params:
     use_policy_for_ucb: false
     epsilon: 0.0001
     init_hands_to_sample: 400
+    policy_ucb_coef: 0.0
   player_three:
     name: MCTSPlayer
     num_mcts_rollouts: 16000
@@ -41,3 +43,4 @@ player_params:
     use_policy_for_ucb: false
     epsilon: 0.0001
     init_hands_to_sample: 400
+    policy_ucb_coef: 0.0

@@ -8,34 +8,37 @@ import numpy as np
 
 
 class MCTS(object):
-    def __init__(self, exploration_weight, policy_model):
+    def __init__(self, exploration_weight, policy_model, policy_ucb_coef):
+        self.policy_ucb_coef = policy_ucb_coef
         self.policy_model = policy_model
         self.Q = defaultdict(lambda: np.array([0.0, 0.0, 0.0]))  # total reward of each node
         self.N = defaultdict(int)  # total visit count for each node
         self.children = dict()  # children of each node
         self.exploration_weight = exploration_weight
+        self.root_node = None
 
     def reset(self):
         self.children = dict()
 
-    def choose(self, node):
+    def choose(self):
         "Choose the best successor of node. (Choose a move in the game)"
-        if node.is_terminal():
-            raise RuntimeError(f"choose called on terminal node {node}")
+        if self.root_node.is_terminal():
+            raise RuntimeError(f"choose called on terminal node {self.root_node}")
 
-        if node not in self.children:
-            raise RuntimeError(f"No iterations performed {node}")
+        if self.root_node not in self.children:
+            raise RuntimeError(f"No iterations performed {self.root_node}")
 
         def all_value_functions(n):
             assert self.N[n] > 0
             return self.Q[n] / self.N[n]  # average reward
 
-        res = [(child, all_value_functions(child)) for child in self.children[node]]
-        return res
+        values = [(child, all_value_functions(child)) for child in self.children[self.root_node]]
+        visitations = [(child, self.N[child]) for child in self.children[self.root_node]]
+        return values, visitations
 
-    def do_rollout(self, node):
+    def do_rollout(self):
         "Make the tree one layer better. (Train for one iteration.)"
-        path = self._select(node)
+        path = self._select(self.root_node)
         leaf = path[-1]
         self._expand(leaf)
         reward = self._simulate(leaf)
@@ -43,6 +46,7 @@ class MCTS(object):
 
     def _select(self, node):
         "Find an unexplored descendent of `node`"
+        main_player = self.root_node.active_player
         path = []
         while True:
             path.append(node)
@@ -54,7 +58,10 @@ class MCTS(object):
                 n = unexplored.pop()
                 path.append(n)
                 return path
-            node = self._uct_select(node)  # descend a layer deeper
+            if node.active_player == main_player or self.policy_model is None:
+                node = self._uct_select(node)  # descend a layer deeper -- use UCT for OWN actions
+            else:
+                node = self._policy_select(node)
 
     def _expand(self, node):
         "Update the `children` dict with the children of `node`"
@@ -81,6 +88,14 @@ class MCTS(object):
             self.Q[node] += reward
 
 
+    def _policy_select(self, node):
+        policy_probabilities = node.policy_estimate(self.policy_model)
+        children = list(self.children[node])
+        child_probabilities = [policy_probabilities[child.last_played_card] for child in children]
+        selected_index = np.random.choice(np.arange(len(children)), size=1, p=child_probabilities)
+        return children[selected_index[0]]
+
+
     def _uct_select(self, node):
         "Select a child of node, balancing exploration & exploitation"
 
@@ -95,10 +110,13 @@ class MCTS(object):
         player = node.active_player
         avgs = {n: self.Q[n][player] / self.N[n] for n in self.children[node]}
 
-        if self.policy_model is not None:
+        baseline_probabilities = np.array([1.0 / len(self.children[node])] * 32)
+        if self.policy_model is not None and self.policy_ucb_coef > 0.0:
             policy_probabilities = node.policy_estimate(self.policy_model)
+            policy_probabilities = (self.policy_ucb_coef * policy_probabilities +
+                                    (1 - self.policy_ucb_coef) * policy_probabilities)
         else:
-            policy_probabilities = [1.0/len(self.children[node])] * 32
+            policy_probabilities = baseline_probabilities
 
         def uct(n):
             "Upper confidence bound for trees"

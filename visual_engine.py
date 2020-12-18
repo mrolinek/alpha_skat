@@ -37,7 +37,7 @@ renderer = CardGameRenderer(sys.argv[1], rect)
 
 file_num = 0
 running = True
-record_video = False
+record_video = (len(sys.argv) > 1 and sys.argv[2] == 'record')
 while running:
 
     snap = False
