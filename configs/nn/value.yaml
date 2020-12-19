@@ -1,5 +1,5 @@
 working_dir: tmp
-num_epochs: 40
+num_epochs: 30
 mode: value
 data_params:
   data_dir: /is/rg/al/Data/alpha_skat/policy_and_value_big
@@ -9,7 +9,7 @@ model_params:
   loss_function: "SmoothL1"
   optimizer_params:
     name: AdamW
-    lr: 0.0005
+    lr: 0.002
     weight_decay: 0.000001
   scheduler_params:
     gamma: 0.1
