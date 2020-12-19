@@ -184,8 +184,9 @@ class PolicyModel(CardGameModel):
 
 
 class ValueModel(CardGameModel):
-    def __init__(self, *, arch_params, **kwargs):
+    def __init__(self, *, arch_params, loss_function, **kwargs):
         super().__init__(**kwargs)
+        self.loss_function = loss_function
         self.backbone = get_arch(**arch_params, num_classes=3)
         self.convolutional = 'transformer' not in arch_params.name.lower()
         self.validation_metrics = ["val_loss", "val_l1_scaled"]
@@ -231,15 +232,20 @@ class ValueModel(CardGameModel):
         states, values = self._apply_augmentation(*batch)
 
         predicted_values = self(states)
-        value_loss = ((predicted_values - values / self.value_scaling_constant) ** 2).mean()
+        loss = self.loss_fn(predicted_values, values)
+        return loss
 
-        return value_loss
+    def loss_fn(self, predicted_values, true_values):
+        if self.loss_function == "L2":
+            return ((predicted_values - true_values / self.value_scaling_constant) ** 2).mean()
+        elif self.loss_function == 'SmoothL1':
+            return F.smooth_l1_loss(predicted_values, true_values / self.value_scaling_constant)
 
     def validation_step(self, batch, batch_idx):
         states, values = batch
         predicted_values = self(states)
-        value_loss = ((predicted_values - values / self.value_scaling_constant) ** 2).mean()
+        loss = self.loss_fn(predicted_values, values)
         value_l1_loss = (self.value_scaling_constant * predicted_values - values).abs().mean()
 
         # Calling self.log will surface up scalars for you in TensorBoard
-        return value_loss, value_l1_loss
+        return loss, value_l1_loss
