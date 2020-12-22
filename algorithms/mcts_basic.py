@@ -209,14 +209,14 @@ class CardGameNode(MultiplayerMCTSNode):
         if self._value is not None:
             return self._value
         nn_state = self.current_state.state_for_player(self.active_player).state_for_nn
-        self._value = model.get_policy_and_value(nn_state)
+        self._value = model.get_value(nn_state)
         return self._value
 
     def policy_estimate(self, model):
         if self._policy_probabilities is not None:
             return self._policy_probabilities
         nn_state = self.current_state.state_for_player(self.active_player).state_for_nn
-        logits, value_ = model.get_policy_and_value(nn_state)
+        logits = model.get_policy(nn_state)
         one_hot_actions = np_one_hot(self.actions, dim=32)
         self._policy_probabilities = softmax(logits + 1000 * (one_hot_actions - 1)) * one_hot_actions
         return self._policy_probabilities

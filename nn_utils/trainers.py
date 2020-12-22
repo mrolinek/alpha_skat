@@ -63,8 +63,7 @@ class CardGameModel(pl.LightningModule):
 
         super().__init__()
         self.optimizer_params = optimizer_params
-        self.scheduler_params = scheduler_params
-        self.save_hyperparameters()
+        self.scheduler_params = scheduler_params        
         self.backbone = None
 
         self.value_scaling_constant = constants[game]["value_scaling_constant"]
@@ -117,6 +116,7 @@ class CardGameModel(pl.LightningModule):
 class PolicyModel(CardGameModel):
     def __init__(self, *, arch_params, **kwargs):
         super().__init__(**kwargs)
+        self.save_hyperparameters()
         self.backbone = get_arch(**arch_params, num_classes=32)
         self.convolutional = 'transformer' not in arch_params.name.lower()
         self.validation_metrics = ["val_acc", "val_kl_loss"]
@@ -186,6 +186,7 @@ class PolicyModel(CardGameModel):
 class ValueModel(CardGameModel):
     def __init__(self, *, arch_params, loss_function, **kwargs):
         super().__init__(**kwargs)
+        self.save_hyperparameters()
         self.loss_function = loss_function
         self.backbone = get_arch(**arch_params, num_classes=3)
         self.convolutional = 'transformer' not in arch_params.name.lower()

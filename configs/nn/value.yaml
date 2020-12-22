@@ -6,7 +6,7 @@ data_params:
   batch_size: 128
 model_params:
   game: ramsch
-  loss_function: "SmoothL1"
+  loss_function: "L2"
   optimizer_params:
     name: AdamW
     lr: 0.0005

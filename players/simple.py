@@ -3,7 +3,7 @@ import random
 import torch
 import numpy as np
 
-from train_model import TrainSkatModel
+from train_model import PolicyModel
 from utils import np_one_hot
 
 
@@ -28,13 +28,13 @@ class RandomPlayer(Player):
 class NNPlayer(Player):
     def __init__(self, checkpoint_path):
         super().__init__()
-        self.model = TrainSkatModel.load_from_checkpoint(checkpoint_path)
+        self.model = PolicyModel.load_from_checkpoint(checkpoint_path)
 
         self.model.eval()
 
     def play(self, state, available_actions, ruleset):
         action_mask = np_one_hot(available_actions, dim=32)
-        policy, value = self.model.get_policy_and_value(state.state_for_nn)
+        policy = self.model.get_policy(state.state_for_nn)
 
         action = int(np.argmax(policy + 1000*(action_mask-1), axis=-1))
         assert action in available_actions, (policy, action_mask)

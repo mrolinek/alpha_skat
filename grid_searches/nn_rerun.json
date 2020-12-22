@@ -1,0 +1,15 @@
+{
+  "optimization_procedure_name": "nn_train_value",
+  "__import__": "grid_searches/base_gpu.json",
+  "script_relative_path": "train_model.py",
+  "fixed_params": {
+  },
+  "restarts": 1,
+  "samples": null,
+  "hyperparam_list": [
+    {
+      "param": "__import__",
+      "values": ["configs/nn/value.yaml", "configs/nn/policy.yaml"]
+    }
+  ]
+}

@@ -5,7 +5,7 @@ from algorithms.mcts_basic import MCTS, CardGameNode
 from algorithms.mcts_parallel_value import MCTS_parallel
 from players.simple import Player
 from sat_solver import solve_sat_for_init_hands, top_k_likely_hands
-from train_model import TrainSkatModel
+from train_model import PolicyModel, ValueModel
 from utils import np_one_hot, softmax
 
 import numpy as np
@@ -31,12 +31,12 @@ class MCTSPlayer(Player):
         self.num_mcts_rollouts = num_mcts_rollouts
         self.softmax_temperature_for_saving = softmax_temperature_for_saving
         if value_function_checkpoint:
-            self.value_model = TrainSkatModel.load_from_checkpoint(value_function_checkpoint)
+            self.value_model = ValueModel.load_from_checkpoint(value_function_checkpoint)
         else:
             self.value_model = None
 
         if policy_function_checkpoint:
-            self.policy_model = TrainSkatModel.load_from_checkpoint(policy_function_checkpoint)
+            self.policy_model = PolicyModel.load_from_checkpoint(policy_function_checkpoint)
         else:
             self.policy_model = None
 
