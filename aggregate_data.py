@@ -30,8 +30,8 @@ def aggregate_all_data(source_dir, target_dir):
     aggregate("inputs")
     aggregate("policy_probs")
     aggregate("masks")
-    aggregate("full_states", k=3000)
-    aggregate("full_state_values", k=3000)
+    aggregate("full_states", k=6000)
+    aggregate("full_state_values", k=6000)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 {
-  "optimization_procedure_name": "nn_train_value",
+  "optimization_procedure_name": "nn_train_value3",
   "__import__": "grid_searches/base_gpu.json",
   "script_relative_path": "train_model.py",
   "fixed_params": {
@@ -9,8 +9,8 @@
   "samples": null,
   "hyperparam_list": [
     {
-      "param": "num_epochs",
-      "values": [10, 20, 40]
+	"param": "model_params.loss_function",
+        "values": ["L1Smooth", "L2"]
     }
   ]
 }
