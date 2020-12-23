@@ -1,24 +1,18 @@
 import itertools
-import os
 import random
 from functools import lru_cache
 
 import torch
-from cluster import cluster_main
-from torch import nn
 from torch.nn import functional as F
-from torch.utils.data import DataLoader, random_split, TensorDataset
 from torchvision.models import resnet18, resnet50, resnet101, resnext50_32x4d, mobilenet_v2
 from efficientnet_pytorch import EfficientNet
 
 from nn_utils.game_constants import constants
 from nn_utils.models import TransformerModel
-from torchvision.models.resnet import _resnet, Bottleneck, BasicBlock
+from torchvision.models.resnet import _resnet, BasicBlock
 
-from torchvision import transforms
 import pytorch_lightning as pl
 from pytorch_lightning.metrics.functional import accuracy
-from pytorch_lightning import metrics
 
 import numpy as np
 
@@ -63,7 +57,7 @@ class CardGameModel(pl.LightningModule):
 
         super().__init__()
         self.optimizer_params = optimizer_params
-        self.scheduler_params = scheduler_params        
+        self.scheduler_params = scheduler_params
         self.backbone = None
 
         self.value_scaling_constant = constants[game]["value_scaling_constant"]

@@ -6,7 +6,7 @@ from algorithms.mcts_parallel_value import MCTS_parallel
 from players.simple import Player
 from sat_solver import solve_sat_for_init_hands, top_k_likely_hands
 from train_model import PolicyModel, ValueModel
-from utils import np_one_hot, softmax
+from utils import np_one_hot
 
 import numpy as np
 
@@ -57,7 +57,6 @@ class MCTSPlayer(Player):
         for child, vals in state_values.items():
             self.full_states.append(child.current_state.state_for_nn[None, ...])
             self.full_state_values.append(vals[None, ...])
-
 
         self.action_masks.append(action_mask[None, ...])
         self.policy_probs.append(probabilities[None, ...])
@@ -125,11 +124,10 @@ class MCTSPlayer(Player):
         def save_arr(arr, file_name):
             full_filename = os.path.join(working_dir, f"{file_name}_{player_id}.npy")
             concat = np.concatenate(arr, axis=0)
-            np.save(full_filename,concat)
+            np.save(full_filename, concat)
 
         save_arr(self.input_states, "inputs")
         save_arr(self.policy_probs, "policy_probs")
         save_arr(self.action_masks, "masks")
         save_arr(self.full_state_values, "full_state_values")
         save_arr(self.full_states, "full_states")
-

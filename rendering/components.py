@@ -1,5 +1,4 @@
 import pickle
-import random
 from collections import namedtuple
 from itertools import chain
 
@@ -18,13 +17,16 @@ class Card(pygame.sprite.Sprite):
         self.surf.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.surf.get_rect(center=center)
 
+
 Rect = namedtuple('Rect', ['top', 'left', 'bottom', 'right'])
+
 
 class Hand(object):
     def __init__(self, player_num, rect):
         self.player_num = player_num
         self.current_cards = []
-        self.rotation_angle = 90 - 90 * player_num  # player 0 -> left, 1 -> center, 2 -> right
+        # player 0 -> left, 1 -> center, 2 -> right
+        self.rotation_angle = 90 - 90 * player_num
         self.card_sprites = []
         self.rect = rect
         self.sync()
@@ -34,8 +36,7 @@ class Hand(object):
         for sprite in self.card_sprites:
             sprite.kill()
         self.card_sprites = [Card(card, self.rotation_angle, center) for card, center in
-                              zip(self.current_cards, self.centers)]
-
+                             zip(self.current_cards, self.centers)]
 
     def recompute_centers(self):
         if not len(self.current_cards):
@@ -64,7 +65,6 @@ class Hand(object):
         self.current_cards = new_cards
         self.sync()
 
-
     def render_update(self, screen):
         for sprite in self.card_sprites:
             screen.blit(sprite.surf, sprite.rect)
@@ -88,8 +88,7 @@ class Trick(object):
         for sprite in self.card_sprites:
             sprite.kill()
         self.card_sprites = [Card(card, rotation=0, center=center) for card, center in
-                              zip(self.cards, self.centers) if card is not None]
-
+                             zip(self.cards, self.centers) if card is not None]
 
     def compute_centers(self):
         down_offset = 50
@@ -120,7 +119,6 @@ class History(object):
             self.cards[i // 3][player] = card
         self.sync()
 
-
     def sync(self):
         for sprite in self.card_sprites:
             sprite.kill()
@@ -135,9 +133,10 @@ class History(object):
         y_per_card = 105
         middle_lower = 10
 
-        y_centers = [self.rect.top + top_offset + y_per_card * i for i in range(self.num_tricks)]
-        x_centers = [self.rect.left + left_offset + x_per_card * i for i in range(3)]
-
+        y_centers = [self.rect.top + top_offset +
+                     y_per_card * i for i in range(self.num_tricks)]
+        x_centers = [self.rect.left + left_offset +
+                     x_per_card * i for i in range(3)]
 
         def centers_for_k(k):
             return [(x_centers[2], y_centers[k]),
@@ -169,7 +168,6 @@ class StatusBar(object):
         self.skat_text = smaller_font.render('Skat:', False, (255, 255, 255))
         self.sync()
 
-
     def set_status(self, current_status):
         skat = current_status.skat_as_ints
         self.cards = [Card(skat[0], rotation=0, center=(self.rect.left + 140, 60)),
@@ -180,11 +178,14 @@ class StatusBar(object):
     def sync(self):
         smaller_font = pygame.font.SysFont('Comic Sans MS', 30)
 
-        texts = [f"{name}: {score}" for name, score in zip(self.names, self.scores)]
-        self.score_texts = [smaller_font.render(text, False, (255, 255, 255)) for text in texts]
+        texts = [f"{name}: {score}" for name,
+                 score in zip(self.names, self.scores)]
+        self.score_texts = [smaller_font.render(
+            text, False, (255, 255, 255)) for text in texts]
 
     def render_update(self, screen):
-        screen.blit(self.title_text, ((self.rect.left + self.rect.right) // 2, 30))
+        screen.blit(self.title_text,
+                    ((self.rect.left + self.rect.right) // 2, 30))
 
         screen.blit(self.skat_text, (self.rect.left + 20, 50))
         screen.blit(self.cards[0].surf, self.cards[0].rect)
@@ -193,7 +194,6 @@ class StatusBar(object):
         score_centers = [(self.rect.right - 150, 150),
                          ((self.rect.left + self.rect.right) // 2, 150),
                          (self.rect.left + 150, 150)]
-
 
         for text, center in zip(self.score_texts, score_centers):
             screen.blit(text, center)
@@ -214,22 +214,22 @@ class CardGameRenderer(object):
                          right=int(0.8*self.rect.right+0.2*self.rect.left))
 
         history_rect = Rect(top=self.rect.top,
-                         bottom=self.rect.bottom,
-                         left=game_rect.right,
-                         right=self.rect.right)
+                            bottom=self.rect.bottom,
+                            left=game_rect.right,
+                            right=self.rect.right)
 
         status_rect = Rect(top=self.rect.top,
                            bottom=self.rect.top + 200,
                            left=self.rect.left,
                            right=int(0.8 * self.rect.right + 0.2 * self.rect.left))
 
-        self.hand_renderers = [Hand(player_num=i, rect=game_rect) for i in range(3)]
+        self.hand_renderers = [
+            Hand(player_num=i, rect=game_rect) for i in range(3)]
         self.trick_renderer = Trick(game_rect)
         self.history_renderer = History(history_rect, num_tricks=10)
         self.status_bar_renderer = StatusBar(status_rect, names=self.names)
 
         self.update_all()
-
 
     def next(self):
         if self.current_index + 1 < len(self.status_list):
@@ -257,7 +257,6 @@ class CardGameRenderer(object):
         self.history_renderer.set_history(all_played_cards, player_ids)
 
         self.status_bar_renderer.set_status(current_status)
-
 
     def render_all(self, screen):
         for renderer in self.hand_renderers:

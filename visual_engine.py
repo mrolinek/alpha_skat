@@ -1,25 +1,15 @@
+from pygame.locals import K_LEFT, K_RIGHT, KEYDOWN, QUIT
 import os
 import sys
 
 import pygame
 import pygame.camera
 
-
 from rendering.components import CardGameRenderer
 
 HEIGHT = 1100
 WIDTH = 1500
 
-from pygame.locals import (
-    RLEACCEL,
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_ESCAPE,
-    KEYDOWN,
-    QUIT,
-)
 
 save_video = True
 
@@ -28,8 +18,6 @@ pygame.init()
 
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
 screen.fill((0, 0, 0))
-
-
 
 
 rect = (0, 0, HEIGHT, WIDTH)
@@ -65,10 +53,10 @@ while running:
         pygame.image.save(screen, filename)
         file_num += 1
 
-
     pygame.display.flip()
 
 # Done! Time to quit.
 if record_video:
-    os.system(f"ffmpeg -r 1 -f image2 -i snaps/%04d.png -y -qscale 0 -s {WIDTH}x{HEIGHT} result.avi")
+    os.system(
+        f"ffmpeg -r 1 -f image2 -i snaps/%04d.png -y -qscale 0 -s {WIDTH}x{HEIGHT} result.avi")
 pygame.quit()

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
+
 class ArraySlice(object):
     def __init__(self, slice_in_array):
         self.slice_in_array = slice_in_array
@@ -22,10 +23,10 @@ class GameState(ABC):
     columns = 32
 
     def __init__(self, full_state=None, dtype=np.int16):
-        self.total_rows = (self.status_rows+
-                           self.hand_rows+
-                           self.gameplay_rows+
-                           self.redundant_rows+
+        self.total_rows = (self.status_rows +
+                           self.hand_rows +
+                           self.gameplay_rows +
+                           self.redundant_rows +
                            self.implication_rows)
         if full_state is not None:
             if not full_state.shape == (self.total_rows, self.columns):
@@ -39,7 +40,6 @@ class GameState(ABC):
     @abstractmethod
     def from_initial_hands(cls, initial_hands, dealer):
         pass
-
 
     def current_hand_for_player(self, player_id):  # skat will have ID 3 (if applicable)
         return self.full_state[self.status_rows + player_id]

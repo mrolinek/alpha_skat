@@ -23,7 +23,6 @@ class Ruleset(ABC):
     def is_finished(state):
         pass
 
-
     @staticmethod
     @abstractmethod
     def do_action(state, action):

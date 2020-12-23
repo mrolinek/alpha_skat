@@ -1,8 +1,5 @@
 import os
 import pickle
-import random
-import torch
-
 from cluster import cluster_main
 
 import numpy as np

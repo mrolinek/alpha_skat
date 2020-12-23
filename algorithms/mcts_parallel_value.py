@@ -1,11 +1,8 @@
-import random
 from collections import defaultdict
 
-import torch
 import numpy as np
 
 from algorithms.mcts_basic import MCTS
-from utils import np_one_hot
 
 
 class MCTS_parallel(MCTS):
@@ -55,4 +52,3 @@ def evaluate_batch_of_nodes(list_of_nodes, model):
     nn_states = np.concatenate(nn_states, axis=0)
     value = model.get_value(nn_states)
     return value
-

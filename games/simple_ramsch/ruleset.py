@@ -5,14 +5,13 @@ import numpy as np
 
 from games.simple_ramsch.state import RamschState
 from utils import one_hot_to_int
+from numba import jit
 
 dealing_pattern = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2,
-                                3, 3,
-                                0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
-                                0, 0, 0, 1, 1, 1, 2, 2, 2])
+                            3, 3,
+                            0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
+                            0, 0, 0, 1, 1, 1, 2, 2, 2])
 card_values = [0, 0, 0, 10, 2, 3, 4, 11]
-
-from numba import jit
 
 
 @jit(nopython=True)
@@ -54,7 +53,6 @@ def card_priorities(starting_card):
     return [priority(card) for card in range(32)]
 
 
-
 class RamschRuleset(Ruleset):
 
     @staticmethod
@@ -81,8 +79,6 @@ class RamschRuleset(Ruleset):
 
         new_state.all_hands = init_state.all_hands[np.array([2, 0, 1, 3])]
         return new_state
-
-
 
     @staticmethod
     def available_actions(state):
@@ -141,7 +137,6 @@ class RamschRuleset(Ruleset):
         doesnt_have_cards = [card for card in range(32) if playabilities[card] > playabilities[action]]
         return has_cards, doesnt_have_cards
 
-
     @staticmethod
     def finalize_scores(state):
         scores = state.current_scores
@@ -165,7 +160,3 @@ class RamschRuleset(Ruleset):
             return RamschRuleset.finalize_scores(state).current_scores
         else:
             return None
-
-
-
-

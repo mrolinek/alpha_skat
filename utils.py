@@ -6,8 +6,6 @@ from abc import ABC, abstractmethod
 from functools import update_wrapper, partial
 
 
-
-
 def np_one_hot(values, dim):
     res = np.zeros(shape=(dim,))
     res[np.array(values)] = 1
@@ -36,7 +34,8 @@ def softmax(x):
 class Decorator(ABC):
     def __init__(self, f):
         self.func = f
-        update_wrapper(self, f, updated=[])  # updated=[] so that 'self' attributes are not overwritten
+        # updated=[] so that 'self' attributes are not overwritten
+        update_wrapper(self, f, updated=[])
 
     @abstractmethod
     def __call__(self, *args, **kwargs):
