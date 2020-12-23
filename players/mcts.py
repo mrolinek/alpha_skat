@@ -76,12 +76,14 @@ class MCTSPlayer(Player):
 
         def values_for_starting_state(init_full_state, iterations, state_values, visitations, action_values):
             starting_node = CardGameNode(ruleset, init_full_state)
-
+            print("Trying init state:")
+            print([list(item) for item in init_full_state.hands_as_ints])
             if self.value_model:
                 mcts_runner = MCTS_parallel(value_function_model=self.value_model,
                                             exploration_weight=self.exploration_weight,
                                             policy_model=self.policy_model,
                                             policy_ucb_coef=self.policy_ucb_coef)
+                mcts_runner.root_node = starting_node
                 for i in range(4):
                     mcts_runner.do_rollouts(iterations // 4)
             else:
@@ -92,9 +94,13 @@ class MCTSPlayer(Player):
                     mcts_runner.do_rollout()
 
             learned_values, learned_visitations = mcts_runner.choose()
+            print("Values:")
+            print({c.last_played_card: list(val) for c, val in learned_values})
             visitation_dict = dict(learned_visitations)
+            print("Visitations:")
+            print({c.last_played_card: val for c, val in learned_visitations})
+            print('-----------------------------------------------------------------')
             for child, val in learned_values:
-                assert child not in state_values
                 if visitation_dict[child] > iterations // 4:
                     state_values[child] = val
                 action_values[child.last_played_card] += val / len(init_full_states)
@@ -109,7 +115,11 @@ class MCTSPlayer(Player):
         for init_state in init_full_states:
             values_for_starting_state(init_state, iteration_per_sol, state_values, visitations, action_values)
 
+        print("Aggregate evaluation:")
         print(sorted(visitations.items()))
+        print(sorted(action_values.items()))
+        print('-----------------------------------------------------------------')
+        print('-----------------------------------------------------------------')
         print('-----------------------------------------------------------------')
         player = int(state.active_player)
         active_player_scores = {action: score[player] for action, score in action_values.items()}

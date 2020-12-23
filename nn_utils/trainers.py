@@ -91,7 +91,8 @@ class CardGameModel(pl.LightningModule):
         self.log('train_loss', self._metrics["train_loss"], prog_bar=False)
 
     def validation_epoch_end(self, validation_step_outputs):
-        metrics_to_update = dict(zip(self.validation_metrics, zip(*validation_step_outputs)))
+        metrics_to_update = dict(
+            zip(self.validation_metrics, zip(*validation_step_outputs)))
         for key, value in metrics_to_update.items():
             metrics_to_update[key] = sum(value) / len(value)
             self.log(key, metrics_to_update[key], prog_bar=True)
@@ -103,7 +104,8 @@ class CardGameModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = get_optimizer(self.parameters(), **self.optimizer_params)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, **self.scheduler_params)
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, **self.scheduler_params)
         return [optimizer], [scheduler]
 
 
@@ -115,7 +117,8 @@ class PolicyModel(CardGameModel):
         self.convolutional = 'transformer' not in arch_params.name.lower()
         self.validation_metrics = ["val_acc", "val_kl_loss"]
         self.train_metrics = ["train_loss"]
-        self._metrics = {m: 0.0 for m in self.train_metrics + self.validation_metrics}
+        self._metrics = {
+            m: 0.0 for m in self.train_metrics + self.validation_metrics}
 
     def forward(self, x):
         x = x - 0.025
@@ -169,7 +172,8 @@ class PolicyModel(CardGameModel):
         policy_loss = F.kl_div(torch.log_softmax(predicted_policy_logits, dim=1), true_policy_probs,
                                reduction='batchmean')
 
-        pred_ys = torch.argmax(predicted_policy_logits + 1000 * (masks - 1), dim=1)
+        pred_ys = torch.argmax(predicted_policy_logits +
+                               1000 * (masks - 1), dim=1)
         true_ys = torch.argmax(true_policy_probs + 1000 * (masks - 1), dim=1)
         acc = accuracy(pred_ys, true_ys)
 
@@ -186,7 +190,8 @@ class ValueModel(CardGameModel):
         self.convolutional = 'transformer' not in arch_params.name.lower()
         self.validation_metrics = ["val_loss", "val_l1_scaled"]
         self.train_metrics = ["train_loss"]
-        self._metrics = {m: 0.0 for m in self.train_metrics + self.validation_metrics}
+        self._metrics = {
+            m: 0.0 for m in self.train_metrics + self.validation_metrics}
 
     def forward(self, x):
         x = x - 0.035
@@ -211,7 +216,7 @@ class ValueModel(CardGameModel):
 
         self.eval()
         with torch.no_grad():
-            values = self(x)
+            values = self(x) * self.value_scaling_constant
 
         if was_singleton:
             values = values[0]
@@ -240,7 +245,8 @@ class ValueModel(CardGameModel):
         states, values = batch
         predicted_values = self(states)
         loss = self.loss_fn(predicted_values, values)
-        value_l1_loss = (self.value_scaling_constant * predicted_values - values).abs().mean()
+        value_l1_loss = (self.value_scaling_constant *
+                         predicted_values - values).abs().mean()
 
         # Calling self.log will surface up scalars for you in TensorBoard
         return loss, value_l1_loss

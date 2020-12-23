@@ -12,7 +12,6 @@ def extract_tricks(full_state, first_row, num_played_cards):
     return full_state[first_row_of_trick:first_row_of_trick + num_cards_in_trick]
 
 
-
 class RamschState(GameState):
     status_rows = 2
     hand_rows = 4
@@ -25,17 +24,20 @@ class RamschState(GameState):
     num_played_cards = ArraySlice(slice_in_array=(-1, 0))
     player_id_sequence = ArraySlice(slice_in_array=1)
     active_player = ArraySlice(slice_in_array=(0, 6))
-    all_hands = ArraySlice(slice_in_array=slice(status_rows, status_rows + hand_rows))
+    all_hands = ArraySlice(slice_in_array=slice(
+        status_rows, status_rows + hand_rows))
     skat = ArraySlice(slice_in_array=status_rows + hand_rows-1)
-    implications = ArraySlice(slice_in_array=slice(status_rows + hand_rows+ gameplay_rows,
-                                                  status_rows + hand_rows+ gameplay_rows + implication_rows))
-    played_cards = ArraySlice(slice_in_array=slice(status_rows + hand_rows, status_rows + hand_rows+gameplay_rows))
+    implications = ArraySlice(slice_in_array=slice(status_rows + hand_rows + gameplay_rows,
+                                                   status_rows + hand_rows + gameplay_rows + implication_rows))
+    played_cards = ArraySlice(slice_in_array=slice(
+        status_rows + hand_rows, status_rows + hand_rows+gameplay_rows))
 
     @classmethod
     def from_initial_hands(cls, initial_hands, dealer, hands_as_ints=True):
         instance = cls(full_state=None)
         if hands_as_ints:
-            np_hands = [np_one_hot(hand, 32)[None, :] for hand in initial_hands]
+            np_hands = [np_one_hot(hand, 32)[None, :]
+                        for hand in initial_hands]
             instance.all_hands = np.concatenate(np_hands, axis=0)
         else:
             instance.all_hands = initial_hands
@@ -55,21 +57,24 @@ class RamschState(GameState):
     def state_for_nn(self):
         new_state = RamschState(self.full_state.copy(), dtype=np.float32)
         new_state.current_scores = new_state.current_scores / 30.0
-        new_state.player_id_sequence = (new_state.player_id_sequence - 1.0) / 10.0
+        new_state.player_id_sequence = (
+            new_state.player_id_sequence - 1.0) / 10.0
         result = new_state.full_state[:-self.redundant_rows]
         return result
 
     @staticmethod
     def full_state_from_partial_and_initial_hands(partial_state, initial_hands):
         inconsistencies = partial_state.all_hands * (1-initial_hands)
-        assert inconsistencies.sum() == 0  # guess on initial hands shouldn't be inconsistent
+        # guess on initial hands shouldn't be inconsistent
+        assert inconsistencies.sum() == 0
         still_in_play = 1 - np.sum(partial_state.played_cards, axis=0)
         full_state = RamschState(partial_state.full_state.copy())
         full_state.all_hands = initial_hands * still_in_play[None, :]
         return full_state
 
     def recover_init_state(self, initial_hands):
-        new_state = RamschState.from_initial_hands(initial_hands, one_hot_to_int(self.dealer), hands_as_ints=False)
+        new_state = RamschState.from_initial_hands(
+            initial_hands, one_hot_to_int(self.dealer), hands_as_ints=False)
         return new_state
 
     @property
@@ -77,7 +82,8 @@ class RamschState(GameState):
         return self.played_cards_as_ints
 
     def add_private_implications(self, player_id):
-        active_row = self.status_rows + self.hand_rows + self.gameplay_rows + self.active_player
+        active_row = self.status_rows + self.hand_rows + \
+            self.gameplay_rows + self.active_player
         for card in self.hands_as_ints[player_id]:
             assert self.full_state[active_row][card] != -1
             self.full_state[active_row][card] = 1
@@ -110,7 +116,8 @@ class RamschState(GameState):
         return self.player_id_sequence[3 * finished_tricks]
 
     def play_card(self, card):
-        assert self.all_hands[self.active_player][card] == 1  # The player has the card
+        # The player has the card
+        assert self.all_hands[self.active_player][card] == 1
         card_as_one_hot = np_one_hot(card, 32)
 
         # Add card to new trick
@@ -129,7 +136,8 @@ class RamschState(GameState):
         self.active_player = (self.active_player + 1) % 3
 
     def apply_public_implications(self, has_cards, doesnt_have_cards):
-        current_row = self.status_rows + self.hand_rows + self.gameplay_rows + self.active_player
+        current_row = self.status_rows + self.hand_rows + \
+            self.gameplay_rows + self.active_player
         for card in has_cards:
             assert self.full_state[current_row][card] != -1
             self.full_state[current_row][card] = 1
@@ -145,5 +153,6 @@ class RamschState(GameState):
     def check_sound(self):
         card_row_start = self.status_rows
         num_card_rows = self.hand_rows + self.gameplay_rows
-        card_sums = np.sum(self.full_state[card_row_start:card_row_start+num_card_rows], axis=0)
+        card_sums = np.sum(
+            self.full_state[card_row_start:card_row_start+num_card_rows], axis=0)
         assert np.abs(card_sums - 1).sum() == 0, card_sums

@@ -95,7 +95,7 @@ def top_k_likely_hands(ruleset, current_state, k, policy_model, init_hands_to_sa
     nn_states = np.concatenate(nn_states, axis=0)
     all_masks_numpy = np.concatenate(
         [np_one_hot(mask, 32)[None, ...] for mask in all_masks], axis=0)
-    policy_logits, value = policy_model.get_policy_and_value(nn_states)
+    policy_logits = policy_model.get_policy(nn_states)
     assert policy_logits.shape == all_masks_numpy.shape
 
     # Collect probabilities of init_hands
