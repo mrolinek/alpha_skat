@@ -6,9 +6,8 @@ from algorithms.mcts_basic import MCTS
 
 
 class MCTS_parallel(MCTS):
-    def __init__(self, *, value_function_model, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.model = value_function_model
 
     def do_rollouts(self, how_many):
         paths = []
@@ -29,7 +28,7 @@ class MCTS_parallel(MCTS):
 
         nodes_to_evaluate, node_mapping = self._backpropagate_batch(paths)
         list_to_evaluate = list(nodes_to_evaluate)
-        values = evaluate_batch_of_nodes(list_to_evaluate, self.model)
+        values = evaluate_batch_of_nodes(list_to_evaluate, self.value_model)
         value_mapping = dict(zip(list_to_evaluate, values))
 
         for node, list_to_update in node_mapping.items():
@@ -47,7 +46,7 @@ class MCTS_parallel(MCTS):
 
 
 def evaluate_batch_of_nodes(list_of_nodes, model):
-    nn_states = [node.current_state.state_for_player(node.active_player).state_for_nn[None, ...]
+    nn_states = [node.current_state.state_for_nn[None, ...]
                  for node in list_of_nodes]
     nn_states = np.concatenate(nn_states, axis=0)
     value = model.get_value(nn_states)

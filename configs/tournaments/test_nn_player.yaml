@@ -1,6 +1,6 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 9
+num_games: 3
 save_games: true
 play_all_hand_rotations: true
 player_params:
@@ -9,18 +9,18 @@ player_params:
     checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
   player_two:
     name: NNPlayer
+    # checkpoint_path: tmp/lightning_logs/version_21/checkpoints/epoch=0.ckpt
     checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
-    #checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
-  player_three:
+  player_three:    
     name: MCTSPlayer
     num_mcts_rollouts: 4000
     guessed_hands: 5
     exploration_weight: 60.0
     value_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_value.ckpt
     policy_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
-    softmax_temperature_for_saving: 0.1
     use_policy_for_init_hands: true
     use_policy_for_ucb: true
     epsilon: 0.0001
     init_hands_to_sample: 400
     policy_ucb_coef: 0.5
+    policy_simulation_steps: 1

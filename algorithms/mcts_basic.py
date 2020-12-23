@@ -8,15 +8,17 @@ import numpy as np
 
 
 class MCTS(object):
-    def __init__(self, exploration_weight, policy_model, policy_ucb_coef):
+    def __init__(self, exploration_weight, policy_model, policy_ucb_coef, value_model, policy_simulation_steps):
         self.policy_ucb_coef = policy_ucb_coef
         self.policy_model = policy_model
+        self.value_model = value_model
         # total reward of each node
         self.Q = defaultdict(lambda: np.array([0.0, 0.0, 0.0]))
         self.N = defaultdict(int)  # total visit count for each node
         self.children = dict()  # children of each node
         self.exploration_weight = exploration_weight
         self.root_node = None
+        self.policy_simulation_steps = policy_simulation_steps
 
     def reset(self):
         self.children = dict()
@@ -66,7 +68,7 @@ class MCTS(object):
                 # descend a layer deeper -- use UCT for OWN actions
                 node = self._uct_select(node)
             else:
-                node = self._policy_select(node)
+                node = self._policy_select(node, soft=True)
 
     def _expand(self, node):
         "Update the `children` dict with the children of `node`"
@@ -79,11 +81,17 @@ class MCTS(object):
 
     def _simulate(self, node):
         "Returns the reward for a random simulation (to completion) of `node`"
+        count = 0
         while True:
+            count += 1
             if node.is_terminal():
                 rewards = node.rewards()
                 return rewards
-            node = node.find_random_child()
+
+            if count <= self.policy_simulation_steps:
+                node = self._policy_select(node, soft=False)
+            else:
+                node = node.find_random_child()
 
     def _backpropagate(self, path, reward):
         "Send the reward back up to the ancestors of the leaf"
@@ -91,14 +99,25 @@ class MCTS(object):
             self.N[node] += 1
             self.Q[node] += reward
 
-    def _policy_select(self, node):
+    def _policy_select(self, node, soft=True):
         policy_probabilities = node.policy_estimate(self.policy_model)
-        children = list(self.children[node])
+        if node in self.children:
+            children = list(self.children[node])
+        else:
+            children = list(node.find_children())
+        if len(children) == 1:
+            return children[0]
+
         child_probabilities = [
             policy_probabilities[child.last_played_card] for child in children]
-        selected_index = np.random.choice(
-            np.arange(len(children)), size=1, p=child_probabilities)
-        return children[selected_index[0]]
+
+        if soft:
+            selected_index = np.random.choice(
+                np.arange(len(children)), size=1, p=child_probabilities)
+            return children[selected_index[0]]
+        else:
+            selected_index = np.argmax(child_probabilities)
+            return children[selected_index]
 
     def _uct_select(self, node):
         "Select a child of node, balancing exploration & exploitation"
@@ -213,8 +232,7 @@ class CardGameNode(MultiplayerMCTSNode):
     def value_function_estimate(self, model):
         if self._value is not None:
             return self._value
-        nn_state = self.current_state.state_for_player(
-            self.active_player).state_for_nn
+        nn_state = self.current_state.state_for_nn
         self._value = model.get_value(nn_state)
         return self._value
 
