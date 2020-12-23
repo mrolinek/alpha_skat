@@ -10,7 +10,7 @@
   "hyperparam_list": [
     {
 	"param": "model_params.loss_function",
-        "values": ["L1Smooth", "L2"]
+        "values": ["SmoothL1", "L2"]
     }
   ]
 }
