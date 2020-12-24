@@ -13,7 +13,7 @@ player_params:
     checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
   player_three:    
     name: MCTSPlayer
-    num_mcts_rollouts: 4000
+    num_mcts_rollouts: 8000
     guessed_hands: 5
     exploration_weight: 60.0
     value_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_value.ckpt
@@ -23,5 +23,5 @@ player_params:
     epsilon: 0.0001
     init_hands_to_sample: 400
     policy_ucb_coef: 0.5
-    use_policy_for_opponents: true
+    use_policy_for_opponents: false
     policy_simulation_steps: 0

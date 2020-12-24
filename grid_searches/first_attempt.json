@@ -1,5 +1,5 @@
 {
-  "optimization_procedure_name": "two_nets_params4",
+  "optimization_procedure_name": "two_nets_params5",
   "__import__": "grid_searches/base_gpu.json",
   "script_relative_path": "game.py",
   "fixed_params": {
@@ -9,12 +9,8 @@
   "samples": null,
   "hyperparam_list": [
     {
-      "param": "player_params.player_three.policy_ucb_coef",
-      "values": [0.0, 0.5, 1.0]
-    },
-    {
-      "param": "player_params.player_three.use_policy_for_opponents",
-      "values": [false, true]
+      "param": "player_params.player_three.num_mcts_rollouts",
+      "values": [2000, 4000, 8000]
     }
   ]
 }
