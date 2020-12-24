@@ -208,7 +208,7 @@ class ValueModel(CardGameModel):
             was_singleton = True
             x = x[None, ...]
 
-        if torch.cuda.is_available() and x.shape[0] > 20:
+        if torch.cuda.is_available():
             self.cuda()
             x = x.cuda()
         else:
