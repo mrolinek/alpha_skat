@@ -8,7 +8,8 @@ import numpy as np
 
 
 class MCTS(object):
-    def __init__(self, exploration_weight, policy_model, policy_ucb_coef, value_model, policy_simulation_steps):
+    def __init__(self, exploration_weight, policy_model, policy_ucb_coef, value_model, policy_simulation_steps,
+                 use_policy_for_opponents):
         self.policy_ucb_coef = policy_ucb_coef
         self.policy_model = policy_model
         self.value_model = value_model
@@ -19,6 +20,7 @@ class MCTS(object):
         self.exploration_weight = exploration_weight
         self.root_node = None
         self.policy_simulation_steps = policy_simulation_steps
+        self.use_policy_for_opponents = use_policy_for_opponents
 
     def reset(self):
         self.children = dict()
@@ -64,7 +66,7 @@ class MCTS(object):
                 n = unexplored.pop()
                 path.append(n)
                 return path
-            if node.active_player == main_player or self.policy_model is None:
+            if node.active_player == main_player or not self.use_policy_for_opponents:
                 # descend a layer deeper -- use UCT for OWN actions
                 node = self._uct_select(node)
             else:

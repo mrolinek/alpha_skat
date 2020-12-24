@@ -1,6 +1,6 @@
 game_name: simple_ramsch
 working_dir: "tmp"
-num_games: 3
+num_games: 9
 save_games: true
 play_all_hand_rotations: true
 player_params:
@@ -23,4 +23,5 @@ player_params:
     epsilon: 0.0001
     init_hands_to_sample: 400
     policy_ucb_coef: 0.5
+    use_policy_for_opponents: true
     policy_simulation_steps: 0

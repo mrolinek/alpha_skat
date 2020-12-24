@@ -19,12 +19,14 @@ class MCTSPlayer(Player):
                  epsilon,
                  policy_ucb_coef,
                  policy_simulation_steps,
+                 use_policy_for_opponents,
                  value_function_checkpoint=None,
                  policy_function_checkpoint=None):
         super().__init__()
         self.policy_simulation_steps = policy_simulation_steps
         self.policy_ucb_coef = policy_ucb_coef
         self.epsilon = epsilon
+        self.use_policy_for_opponents = use_policy_for_opponents
         self.init_hands_to_sample = init_hands_to_sample
         self.use_policy_for_ucb = use_policy_for_ucb
         self.use_policy_for_init_hands = use_policy_for_init_hands
@@ -84,7 +86,8 @@ class MCTSPlayer(Player):
                                             exploration_weight=self.exploration_weight,
                                             policy_model=self.policy_model,
                                             policy_ucb_coef=self.policy_ucb_coef,
-                                            policy_simulation_steps=self.policy_simulation_steps)
+                                            policy_simulation_steps=self.policy_simulation_steps,
+                                            use_policy_for_opponents=self.use_policy_for_opponents)
                 mcts_runner.root_node = starting_node
                 for i in range(4):
                     mcts_runner.do_rollouts(iterations // 4)
@@ -92,7 +95,8 @@ class MCTSPlayer(Player):
                 mcts_runner = MCTS(self.exploration_weight, self.policy_model,
                                    policy_ucb_coef=self.policy_ucb_coef,
                                    value_model=self.value_model,
-                                   policy_simulation_steps=self.policy_simulation_steps)
+                                   policy_simulation_steps=self.policy_simulation_steps,
+                                   use_policy_for_opponents=self.use_policy_for_opponents)
                 mcts_runner.root_node = starting_node
                 for i in range(iterations):
                     mcts_runner.do_rollout()

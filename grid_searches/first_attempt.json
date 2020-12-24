@@ -1,23 +1,19 @@
 {
-  "optimization_procedure_name": "two_nets_params3",
-  "__import__": "grid_searches/base_cpu.json",
+  "optimization_procedure_name": "two_nets_params4",
+  "__import__": "grid_searches/base_gpu.json",
   "fixed_params": {
     "__import_promise__": "configs/tournaments/test_nn_player.yaml"
   },
-  "restarts": 200,
+  "restarts": 100,
   "samples": null,
   "hyperparam_list": [
     {
-      "param": "player_params.player_three.num_mcts_rollouts",
-      "values": [4000, 8000]
+      "param": "player_params.player_three.policy_ucb_coef",
+      "values": [0.0, 0.5, 1.0]
     },
     {
-      "param": "player_params.player_three.epsilon",
-      "values": [1e-5, 1e-4, 1e-3]
-    },
-    {
-      "param": "player_params.player_three.guessed_hands",
-      "values": [5, 10]
+      "param": "player_params.player_three.use_policy_for_opponents",
+      "values": [false, true]
     }
   ]
 }
