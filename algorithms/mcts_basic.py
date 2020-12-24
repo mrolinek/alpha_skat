@@ -8,8 +8,7 @@ import numpy as np
 
 
 class MCTS(object):
-    def __init__(self, exploration_weight, policy_model, policy_ucb_coef, value_model, policy_simulation_steps,
-                 use_policy_for_opponents):
+    def __init__(self, exploration_weight, policy_model, policy_ucb_coef, value_model):
         self.policy_ucb_coef = policy_ucb_coef
         self.policy_model = policy_model
         self.value_model = value_model
@@ -19,8 +18,6 @@ class MCTS(object):
         self.children = dict()  # children of each node
         self.exploration_weight = exploration_weight
         self.root_node = None
-        self.policy_simulation_steps = policy_simulation_steps
-        self.use_policy_for_opponents = use_policy_for_opponents
 
     def reset(self):
         self.children = dict()
@@ -54,7 +51,6 @@ class MCTS(object):
 
     def _select(self, node):
         "Find an unexplored descendent of `node`"
-        main_player = self.root_node.active_player
         path = []
         while True:
             path.append(node)
@@ -66,11 +62,8 @@ class MCTS(object):
                 n = unexplored.pop()
                 path.append(n)
                 return path
-            if node.active_player == main_player or not self.use_policy_for_opponents:
-                # descend a layer deeper -- use UCT for OWN actions
-                node = self._uct_select(node)
-            else:
-                node = self._policy_select(node, soft=True)
+
+            node = self._uct_select(node)
 
     def _expand(self, node):
         "Update the `children` dict with the children of `node`"
@@ -83,43 +76,18 @@ class MCTS(object):
 
     def _simulate(self, node):
         "Returns the reward for a random simulation (to completion) of `node`"
-        count = 0
         while True:
-            count += 1
             if node.is_terminal():
                 rewards = node.rewards()
                 return rewards
 
-            if count <= self.policy_simulation_steps:
-                node = self._policy_select(node, soft=False)
-            else:
-                node = node.find_random_child()
+            node = node.find_random_child()
 
     def _backpropagate(self, path, reward):
         "Send the reward back up to the ancestors of the leaf"
         for node in reversed(path):
             self.N[node] += 1
             self.Q[node] += reward
-
-    def _policy_select(self, node, soft=True):
-        policy_probabilities = node.policy_estimate(self.policy_model)
-        if node in self.children:
-            children = list(self.children[node])
-        else:
-            children = list(node.find_children())
-        if len(children) == 1:
-            return children[0]
-
-        child_probabilities = [
-            policy_probabilities[child.last_played_card] for child in children]
-
-        if soft:
-            selected_index = np.random.choice(
-                np.arange(len(children)), size=1, p=child_probabilities)
-            return children[selected_index[0]]
-        else:
-            selected_index = np.argmax(child_probabilities)
-            return children[selected_index]
 
     def _uct_select(self, node):
         "Select a child of node, balancing exploration & exploitation"

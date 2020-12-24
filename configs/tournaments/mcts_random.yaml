@@ -1,0 +1,9 @@
+num_mcts_rollouts: 16000
+guessed_hands: 10
+exploration_weight: 60.0
+policy_function_checkpoint: ""
+value_function_checkpoint: ""    
+use_policy_for_init_hands: false
+use_policy_for_ucb: false
+init_hands_to_sample: 400
+policy_ucb_coef: 0.0

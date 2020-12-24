@@ -1,0 +1,7 @@
+num_mcts_rollouts: 2000
+guessed_hands: 5
+exploration_weight: 60.0
+use_policy_for_init_hands: true
+use_policy_for_ucb: true
+init_hands_to_sample: 400
+policy_ucb_coef: 0.5

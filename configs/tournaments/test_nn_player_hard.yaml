@@ -6,33 +6,12 @@ play_all_hand_rotations: true
 player_params:
   player_one:
     name: MCTSPlayer
-    num_mcts_rollouts: 16000
-    guessed_hands: 10
-    exploration_weight: 60.0
-    policy_function_checkpoint: ""
-    value_function_checkpoint: ""    
-    use_policy_for_init_hands: false
-    use_policy_for_ucb: false
-    epsilon: 0.0001
-    init_hands_to_sample: 400
-    policy_ucb_coef: 0.0
-    use_policy_for_opponents: false
-    policy_simulation_steps: 0
+    __import__: configs/tournaments/mcts_random.yaml
   player_two:
     name: NNPlayer
-    # checkpoint_path: tmp/lightning_logs/version_21/checkpoints/epoch=0.ckpt
     checkpoint_path: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
   player_three:    
     name: MCTSPlayer
-    num_mcts_rollouts: 2000
-    guessed_hands: 5
-    exploration_weight: 60.0
-    value_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_value.ckpt
-    policy_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt
-    use_policy_for_init_hands: true
-    use_policy_for_ucb: true
-    epsilon: 0.0001
-    init_hands_to_sample: 400
-    policy_ucb_coef: 0.5
-    use_policy_for_opponents: false
-    policy_simulation_steps: 0
+    __import__:
+      - configs/tournaments/mcts_nn.yaml
+      - configs/checkpoints/ramsch/level1.yaml

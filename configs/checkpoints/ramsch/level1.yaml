@@ -1,0 +1,2 @@
+value_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_value.ckpt
+policy_function_checkpoint: /is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_policy.ckpt

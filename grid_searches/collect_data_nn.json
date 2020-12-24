@@ -1,0 +1,12 @@
+{
+  "optimization_procedure_name": "ramsch_level2",
+  "__import__": "grid_searches/base_cpu.json",
+  "fixed_params": {
+    "__import_promise__": "configs/tournaments/data_generation_nn.yaml",
+    "num_games": 3
+  },
+  "restarts": 10000,
+  "samples": null,
+  "hyperparam_list": [
+  ]
+}

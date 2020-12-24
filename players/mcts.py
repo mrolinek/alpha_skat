@@ -16,17 +16,11 @@ class MCTSPlayer(Player):
                  use_policy_for_init_hands,
                  use_policy_for_ucb,
                  init_hands_to_sample,
-                 epsilon,
                  policy_ucb_coef,
-                 policy_simulation_steps,
-                 use_policy_for_opponents,
                  value_function_checkpoint=None,
                  policy_function_checkpoint=None):
         super().__init__()
-        self.policy_simulation_steps = policy_simulation_steps
         self.policy_ucb_coef = policy_ucb_coef
-        self.epsilon = epsilon
-        self.use_policy_for_opponents = use_policy_for_opponents
         self.init_hands_to_sample = init_hands_to_sample
         self.use_policy_for_ucb = use_policy_for_ucb
         self.use_policy_for_init_hands = use_policy_for_init_hands
@@ -70,7 +64,6 @@ class MCTSPlayer(Player):
         if self.use_policy_for_init_hands:
             assert self.policy_model is not None
             init_hands = top_k_likely_hands(ruleset, state, self.guessed_hands, self.policy_model,
-                                            epsilon=self.epsilon,
                                             init_hands_to_sample=self.init_hands_to_sample)
         else:
             init_hands = solve_sat_for_init_hands(state.implications, self.guessed_hands)
@@ -85,18 +78,15 @@ class MCTSPlayer(Player):
                 mcts_runner = MCTS_parallel(value_model=self.value_model,
                                             exploration_weight=self.exploration_weight,
                                             policy_model=self.policy_model,
-                                            policy_ucb_coef=self.policy_ucb_coef,
-                                            policy_simulation_steps=self.policy_simulation_steps,
-                                            use_policy_for_opponents=self.use_policy_for_opponents)
+                                            policy_ucb_coef=self.policy_ucb_coef)
+
                 mcts_runner.root_node = starting_node
                 for i in range(4):
                     mcts_runner.do_rollouts(iterations // 4)
             else:
                 mcts_runner = MCTS(self.exploration_weight, self.policy_model,
                                    policy_ucb_coef=self.policy_ucb_coef,
-                                   value_model=self.value_model,
-                                   policy_simulation_steps=self.policy_simulation_steps,
-                                   use_policy_for_opponents=self.use_policy_for_opponents)
+                                   value_model=self.value_model)
                 mcts_runner.root_node = starting_node
                 for i in range(iterations):
                     mcts_runner.do_rollout()

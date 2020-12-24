@@ -53,7 +53,7 @@ def solve_sat_for_init_hands(public_state_array, num_solutions):
     return result
 
 
-def top_k_likely_hands(ruleset, current_state, k, policy_model, init_hands_to_sample=200, epsilon=1e-4):
+def top_k_likely_hands(ruleset, current_state, k, policy_model, init_hands_to_sample, epsilon=1e-4):
     top_candidates = solve_sat_for_init_hands(
         current_state.implications, init_hands_to_sample)
     assert top_candidates

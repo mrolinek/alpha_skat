@@ -1,0 +1,21 @@
+game_name: simple_ramsch
+working_dir: "tmp"
+num_games: 18
+save_games: false
+play_all_hand_rotations: false
+player_params:
+  player_one:
+    name: MCTSPlayer
+    __import__:
+      - configs/tournaments/mcts_nn.yaml
+      - configs/checkpoints/ramsch/level1.yaml
+  player_two:
+    name: MCTSPlayer
+    __import__:
+      - configs/tournaments/mcts_nn.yaml
+      - configs/checkpoints/ramsch/level1.yaml
+  player_three:
+    name: MCTSPlayer
+    __import__:
+      - configs/tournaments/mcts_nn.yaml
+      - configs/checkpoints/ramsch/level1.yaml
