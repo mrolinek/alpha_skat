@@ -24,11 +24,10 @@ def one_hot_arrays_to_list_of_ints(arrays):
     # return np.array([one_hot_to_int(arr) for arr in arrays])
 
 
-@njit
-def softmax(x):
+def softmax(x, dim=-1):
     """Compute softmax values for each sets of scores in x."""
     e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum(axis=0)  # only difference
+    return e_x / np.sum(e_x, axis=dim, keepdims=True)  # only difference
 
 
 class Decorator(ABC):

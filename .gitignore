@@ -141,4 +141,4 @@ snaps/
 tmp/
 
 *.prof
-.vscode/settings.json
+.vscode/

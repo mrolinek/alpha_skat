@@ -1,19 +1,23 @@
 {
-  "optimization_procedure_name": "two_nets_params2",
+  "optimization_procedure_name": "two_nets_params3",
   "__import__": "grid_searches/base_cpu.json",
   "fixed_params": {
     "__import_promise__": "configs/tournaments/test_nn_player.yaml"
   },
-  "restarts": 150,
+  "restarts": 200,
   "samples": null,
   "hyperparam_list": [
     {
-      "param": "player_params.player_three.value_function_checkpoint",
-      "values": ["", "/is/rg/al/Data/alpha_skat/best_checkpoints/ramsch_value.ckpt"]
+      "param": "player_params.player_three.num_mcts_rollouts",
+      "values": [4000, 8000]
     },
     {
-      "param": "player_params.player_three.policy_simulation_steps",
-      "values": [0, 1, 3]
+      "param": "player_params.player_three.epsilon",
+      "values": [1e-5, 1e-4, 1e-3]
+    },
+    {
+      "param": "player_params.player_three.guessed_hands",
+      "values": [5, 10]
     }
   ]
 }

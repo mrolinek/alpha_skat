@@ -23,4 +23,4 @@ player_params:
     epsilon: 0.0001
     init_hands_to_sample: 400
     policy_ucb_coef: 0.5
-    policy_simulation_steps: 1
+    policy_simulation_steps: 0
