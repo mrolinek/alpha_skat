@@ -1,8 +1,9 @@
 {
-  "optimization_procedure_name": "nn_rerun",
+  "optimization_procedure_name": "nn_rerun_l2",
   "__import__": "grid_searches/base_gpu.json",
   "script_relative_path": "train_model.py",
-  "fixed_params": {
+    "fixed_params": {
+	"data_params.data_dir": "/is/rg/al/Data/alpha_skat/ramsch_level2"
   },
   "restarts": 1,
   "samples": null,
